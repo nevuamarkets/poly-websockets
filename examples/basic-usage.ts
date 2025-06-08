@@ -1,0 +1,66 @@
+import ms from 'ms';
+import { WSSubscriptionManager, WebSocketHandlers, PolymarketPriceUpdateEvent, PriceChangeEvent, BookEvent, LastTradePriceEvent } from '../src';
+
+// Example of basic usage with price updates
+const handlers: WebSocketHandlers = {
+  onPolymarketPriceUpdate: async (events: PolymarketPriceUpdateEvent[]) => {
+    for (const event of events) {
+      const obj = {
+        event: "price_update",
+        asset_id: event.asset_id,
+        triggeringEvent: event.triggeringEvent.event_type,
+        price: event.price,
+        midpoint: event.midpoint,
+        spread: event.spread,
+      }
+      console.log(JSON.stringify(obj, null, 2));
+    }
+  },
+
+  onPriceChange: async (events: PriceChangeEvent[]) => {
+    for (const event of events) {
+      //console.log('price_change event', event)
+    }
+  },
+
+  onBook: async (events: BookEvent[]) => {
+    for (const event of events) {
+      //console.log('book event', event)
+    }
+  },
+
+  onLastTradePrice: async (events: LastTradePriceEvent[]) => {
+    for (const event of events) {
+      //console.log('last_trade_price event', event)
+    }
+  },
+
+  onWSClose: async (groupId: string, code: number, reason: string) => {
+    console.log(`WebSocket closed for group ${groupId} with code ${code} and reason ${reason}`);
+  },
+  onWSOpen: async (groupId: string, assetIds: string[]) => {
+    console.log(`WebSocket opened for group ${groupId} with ${assetIds.length} assets`);
+  },
+  onError: async (error: Error) => {
+    console.error('Error handler', error)
+  }
+};
+
+// Create a subscription manager
+const manager = new WSSubscriptionManager(handlers);
+
+(async () => {
+  // Get top 10 markets by volume
+  const response = await fetch('https://gamma-api.polymarket.com/markets?limit=10&order=volumeNum&ascending=false&active=true&closed=false', {method: 'GET'})
+  const data: any[] = await response.json()
+
+  // Filter out markets that don't have a CLob token ID
+  const assetIds = data.filter((market: any) => market.clobTokenIds.length > 0).map((market: any) => JSON.parse(market.clobTokenIds)[0]);
+  
+  console.log('assetIds', assetIds)
+
+  await manager.addSubscriptions(assetIds);
+  setTimeout(() => {
+    manager.removeSubscriptions([assetIds[0]]);
+  }, 5000);
+})();

@@ -1,0 +1,49 @@
+{
+  "name": "poly-websockets",
+  "version": "0.0.1",
+  "description": "Plug-and-play Polymarket WebSocket price alerts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nevuamarkets/poly-websockets.git"
+  },
+  "keywords": [
+    "polymarket",
+    "websocket",
+    "price",
+    "market",
+    "alerts"
+  ],
+  "author": "Konstantinos Lekkas",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/nevuamarkets/poly-websockets/issues"
+  },
+  "homepage": "https://github.com/nevuamarkets/poly-websockets#readme",
+  "dependencies": {
+    "async-mutex": "^0.5.0",
+    "bottleneck": "^2.19.5",
+    "lodash": "^4.17.21",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0",
+    "ws": "^8.18.2"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.17",
+    "@types/ms": "^2.1.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.4.2",
+    "vitest": "^3.0.7",
+    "@types/node": "^22.13.11"
+  }
+}
