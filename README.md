@@ -7,7 +7,7 @@ Powering [Nevua Markets](https://nevua.markets)
 ## Installation
 
 ```bash
-npm install poly-websockets
+npm install @nevuamarkets/poly-websockets
 ```
 
 ## Features
