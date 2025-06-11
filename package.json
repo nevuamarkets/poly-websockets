@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "prepare": "npm run build",
+    "prepare": "npm run build && npm run test",
     "test": "vitest run"
   },
   "repository": {
@@ -19,10 +19,14 @@
   },
   "keywords": [
     "polymarket",
+    "polymarket-api",
     "websocket",
     "price",
     "market",
-    "alerts"
+    "alerts",
+    "real-time",
+    "trading",
+    "prediction-markets"
   ],
   "author": "Konstantinos Lekkas",
   "license": "AGPL-3.0",

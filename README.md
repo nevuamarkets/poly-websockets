@@ -2,6 +2,8 @@
 
 A TypeScript library for real-time Polymarket WebSocket price alerts with automatic connection management and intelligent reconnection handling.
 
+Powering [Nevua Markets](https://nevua.markets)
+
 ## Installation
 
 ```bash
