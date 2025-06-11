@@ -226,7 +226,7 @@ Respects Polymarket's API rate limits:
 
 ## License
 
-All Rights Reserved
+AGPL-3
 
 ## Testing
 
@@ -237,3 +237,15 @@ npm test
 ## TypeScript Support
 
 Full TypeScript definitions included.
+
+## Disclaimer
+
+This software is provided "as is", without warranty of any kind, express or implied. The author(s) are not responsible for:
+
+- Any financial losses incurred from using this software
+- Trading decisions made based on the data provided
+- Bugs, errors, or inaccuracies in the data
+- System failures or downtime
+- Any other damages arising from the use of this software
+
+Use at your own risk. Always verify data independently and never rely solely on automated systems for trading decisions.
