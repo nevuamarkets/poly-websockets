@@ -221,7 +221,7 @@ export type WebSocketHandlers = {
         and denotes the probability of an event happening. Read more about it here:
         https://docs.polymarket.com/polymarket-learn/trading/how-are-prices-calculated#future-price
 
-        This is an aggregate event that is not emmited by the Polymarket WebSocket directly.
+        This is a derived event that is not emmited by the Polymarket WebSocket directly.
     */
     onPolymarketPriceUpdate?: (events: PolymarketPriceUpdateEvent[]) => Promise<void>;
 
