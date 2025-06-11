@@ -1,9 +1,8 @@
 import winston from 'winston';
 
-
 // Override with LOG_LEVEL environment variable (e.g., LOG_LEVEL=info npm start)
 export const logger = winston.createLogger({
-    level: process.env.LOG_LEVEL || 'error',
+    level: process.env.LOG_LEVEL || 'warn',
     format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.errors({ stack: true }),

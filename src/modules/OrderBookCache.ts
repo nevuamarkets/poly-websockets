@@ -155,8 +155,8 @@ export class OrderBookCache {
     public midpoint(assetId: string): string {
         const book = this.bookCache[assetId];
         if (!book) throw new Error(`Book for ${assetId} not cached`);
-        if (book.asks.length === 0) throw new Error('No asks in book');
-        if (book.bids.length === 0) throw new Error('No bids in book');
+        if (book.asks.length === 0) throw new Error(`No asks in book for ${assetId}`);
+        if (book.bids.length === 0) throw new Error(`No bids in book for ${assetId}`);
 
         /*
          * Polymarket book events are currently sorted as such:

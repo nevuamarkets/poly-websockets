@@ -5,7 +5,7 @@ import {
   PriceChangeEvent,
   BookEvent,
   LastTradePriceEvent,
-} from '@nevuamarkets/poly-websockets';
+} from '../src'; // '@nevuamarkets/poly-websockets';
 
 // Example of basic usage with price updates
 const handlers: WebSocketHandlers = {
@@ -31,7 +31,7 @@ const handlers: WebSocketHandlers = {
 
   onBook: async (events: BookEvent[]) => {
     for (const event of events) {
-      //console.log('book event', event)
+      console.log('book event', JSON.stringify(event, null, 2))
     }
   },
 
@@ -62,11 +62,12 @@ const manager = new WSSubscriptionManager(handlers);
 
   // Filter out markets that don't have a CLob token ID
   const assetIds = data.filter((market: any) => market.clobTokenIds.length > 0).map((market: any) => JSON.parse(market.clobTokenIds)[0]);
-  
   console.log('assetIds', assetIds)
 
   await manager.addSubscriptions(assetIds);
+
   setTimeout(() => {
     manager.removeSubscriptions([assetIds[0]]);
   }, 5000);
+
 })();
