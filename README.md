@@ -24,20 +24,19 @@ npm install @nevuamarkets/poly-websockets
 ```typescript
 import { WSSubscriptionManager, WebSocketHandlers } from '@nevuamarkets/poly-websockets';
 
-// Define your event handlers
-const handlers: WebSocketHandlers = {
-  onPolymarketPriceUpdate: async (events) => {
-    events.forEach(event => {
-      console.log(`Price update for ${event.asset_id}: $${event.price}`);
-    });
+// Create the subscription manager with your own handlers
+const manager = new WSSubscriptionManager({
+  onBook: async (events: BookEvent[]) => {
+    for (const event of events) {
+      console.log('book event', JSON.stringify(event, null, 2))
+    }
   },
-  onError: async (error) => {
-    console.error('WebSocket error:', error);
+  onPriceChange: async (events: PriceChangeEvent[]) => {
+    for (const event of events) {
+      console.log('price change event', JSON.stringify(event, null, 2))
+    }
   }
-};
-
-// Create the subscription manager
-const manager = new WSSubscriptionManager(handlers);
+});
 
 // Subscribe to assets
 await manager.addSubscriptions(['asset-id-1', 'asset-id-2']);
