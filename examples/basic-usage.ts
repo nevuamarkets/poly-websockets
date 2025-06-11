@@ -1,5 +1,11 @@
-import ms from 'ms';
-import { WSSubscriptionManager, WebSocketHandlers, PolymarketPriceUpdateEvent, PriceChangeEvent, BookEvent, LastTradePriceEvent } from '../src';
+import {
+  WSSubscriptionManager,
+  WebSocketHandlers,
+  PolymarketPriceUpdateEvent,
+  PriceChangeEvent,
+  BookEvent,
+  LastTradePriceEvent,
+} from '@nevuamarkets/poly-websockets';
 
 // Example of basic usage with price updates
 const handlers: WebSocketHandlers = {
@@ -52,7 +58,7 @@ const manager = new WSSubscriptionManager(handlers);
 (async () => {
   // Get top 10 markets by volume
   const response = await fetch('https://gamma-api.polymarket.com/markets?limit=10&order=volumeNum&ascending=false&active=true&closed=false', {method: 'GET'})
-  const data: any[] = await response.json()
+  const data = await response.json() as any[]
 
   // Filter out markets that don't have a CLob token ID
   const assetIds = data.filter((market: any) => market.clobTokenIds.length > 0).map((market: any) => JSON.parse(market.clobTokenIds)[0]);
