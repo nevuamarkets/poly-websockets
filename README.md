@@ -20,7 +20,7 @@ npm install poly-websockets
 ## Quick Start
 
 ```typescript
-import { WSSubscriptionManager, WebSocketHandlers } from 'poly-websockets';
+import { WSSubscriptionManager, WebSocketHandlers } from '@nevuamarkets/poly-websockets';
 
 // Define your event handlers
 const handlers: WebSocketHandlers = {
