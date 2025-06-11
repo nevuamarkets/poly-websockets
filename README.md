@@ -1,6 +1,6 @@
 # Poly-WebSockets
 
-A TypeScript library for real-time Polymarket WebSocket price alerts with automatic connection management and intelligent reconnection handling.
+A TypeScript library for **real-time Polymarket market price alerts** over **Websocket** with **automatic reconnections** and **easy subscription management**.
 
 Powering [Nevua Markets](https://nevua.markets)
 
@@ -12,11 +12,11 @@ npm install poly-websockets
 
 ## Features
 
-- 🔄 **Automatic Connection Management**: Handles WebSocket connections, reconnections, and cleanup for grouped assetId (i.e. clobTokenId) subscriptions
 - 📊 **Real-time Market Updates**: Get `book` , `price_change`, `tick_size_change` and `last_trade_price` real-time market events from Polymarket WSS
 - 🎯 **Derived Future Price Event**: Implements Polymarket's [price calculation logic](https://docs.polymarket.com/polymarket-learn/trading/how-are-prices-calculated#future-price) (midpoint vs last trade price based on spread)
-- 🚦 **Rate Limiting**: Built-in rate limiting to respect Polymarket API limits
 - 🔗 **Group Management**: Efficiently manages multiple asset subscriptions across connection groups **without losing events** when subscribing / unsubscribing assets.
+- 🔄 **Automatic Connection Management**: Handles WebSocket connections, reconnections, and cleanup for grouped assetId (i.e. clobTokenId) subscriptions
+- 🚦 **Rate Limiting**: Built-in rate limiting to respect Polymarket API limits
 - 💪 **TypeScript Support**: Full TypeScript definitions for all events and handlers
 
 ## Quick Start
