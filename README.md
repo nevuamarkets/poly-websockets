@@ -22,7 +22,10 @@ npm install @nevuamarkets/poly-websockets
 ## Quick Start
 
 ```typescript
-import { WSSubscriptionManager, WebSocketHandlers } from '@nevuamarkets/poly-websockets';
+import {
+  WSSubscriptionManager,
+  WebSocketHandlers
+  } from '@nevuamarkets/poly-websockets';
 
 // Create the subscription manager with your own handlers
 const manager = new WSSubscriptionManager({

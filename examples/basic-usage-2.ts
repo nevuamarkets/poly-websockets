@@ -1,5 +1,5 @@
 import {
-  WSSubscriptionManager,
+  WSSubscriptionManager as PolymarketStream,
   WebSocketHandlers,
   PolymarketPriceUpdateEvent,
   PriceChangeEvent,
@@ -53,7 +53,7 @@ const handlers: WebSocketHandlers = {
 };
 
 // Create a subscription manager
-const manager = new WSSubscriptionManager(handlers);
+const manager = new PolymarketStream(handlers);
 
 (async () => {
   // Get top 10 markets by volume
@@ -61,7 +61,7 @@ const manager = new WSSubscriptionManager(handlers);
   const data = await response.json() as any[]
 
   // Filter out markets that don't have a CLob token ID
-  const assetIds = data.filter((market: any) => market.clobTokenIds.length > 0).map((market: any) => JSON.parse(market.clobTokenIds)[0]);
+  const assetIds = data.filter((market) => market.clobTokenIds.length > 0).map((market) => JSON.parse(market.clobTokenIds)[0]);
   console.log('assetIds', assetIds)
 
   await manager.addSubscriptions(assetIds);
