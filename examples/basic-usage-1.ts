@@ -1,3 +1,4 @@
+import util from 'util';
 import {
     WSSubscriptionManager as PolymarketStream,
     PolymarketPriceUpdateEvent,
@@ -18,10 +19,11 @@ import {
     /* 2. Subscribe to events and log price updates */
     const stream = new PolymarketStream({
       onPolymarketPriceUpdate: async (events: PolymarketPriceUpdateEvent[]) => {
-        events.forEach(event => console.log(JSON.stringify({ 
+        
+        events.forEach(event => console.log(util.inspect({ 
           question: markets.get(event.asset_id),
           chance: (parseFloat(event.price) * 100).toFixed(2) + ' %',
-        }, null, 2)));
+        }, { colors: true, depth: null, compact: false })));
       },
       onError: async (error: Error) => console.error('Error:', error.message)
     });
