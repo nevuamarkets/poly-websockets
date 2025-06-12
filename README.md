@@ -147,10 +147,7 @@ const manager = new WSSubscriptionManager(handlers, {
 
 ## Examples
 
-Check the [examples](./examples) folder for complete working examples including:
-- Basic price monitoring
-- Market data aggregation  
-- Real-time trading interfaces
+Check the [examples](./examples) folder for complete working examples
 
 ## Error Handling
 
@@ -163,7 +160,6 @@ The library includes error handling:
 Respects Polymarket's API rate limits:
 - Default: 5 requests per second burst limit
 - Configurable through custom Bottleneck instances
-- Automatic backoff on rate limit hits
 
 ## License
 
