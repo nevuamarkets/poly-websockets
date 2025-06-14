@@ -213,7 +213,7 @@ export class GroupSocket {
                 try {
                     this.bookCache.upsertPriceChange(event);
                 } catch (err: any) {
-                    logger.warn({ 
+                    logger.debug({ 
                         message: `Skipping derived future price calculation price_change: book not found for asset`, 
                         asset_id: event.asset_id, 
                         event: event,
@@ -226,7 +226,7 @@ export class GroupSocket {
                 try {
                     spreadOver10Cents = this.bookCache.spreadOver(event.asset_id, 0.1);
                 } catch (err: any) {
-                    logger.warn({ 
+                    logger.debug({ 
                         message: 'Skipping derived future price calculation for price_change: error calculating spread', 
                         asset_id: event.asset_id, 
                         event: event,
@@ -240,7 +240,7 @@ export class GroupSocket {
                     try {
                         newPrice = this.bookCache.midpoint(event.asset_id);
                     } catch (err: any) {
-                        logger.warn({ 
+                        logger.debug({ 
                             message: 'Skipping derived future price calculation for price_change: error calculating midpoint', 
                             asset_id: event.asset_id, 
                             event: event,
@@ -251,7 +251,7 @@ export class GroupSocket {
 
                     const bookEntry: BookEntry | null = this.bookCache.getBookEntry(event.asset_id);
                     if (!bookEntry) {
-                        logger.warn({ 
+                        logger.debug({ 
                             message: 'Skipping derived future price calculation price_change: book not found for asset', 
                             asset_id: event.asset_id, 
                             event: event,
@@ -293,7 +293,7 @@ export class GroupSocket {
                 try {
                     spreadOver10Cents = this.bookCache.spreadOver(event.asset_id, 0.1);
                 } catch (err: any) {
-                    logger.warn({ 
+                    logger.debug({ 
                         message: 'Skipping derived future price calculation for last_trade_price: error calculating spread', 
                         asset_id: event.asset_id, 
                         event: event,
@@ -308,7 +308,7 @@ export class GroupSocket {
 
                     const bookEntry: BookEntry | null = this.bookCache.getBookEntry(event.asset_id);
                     if (!bookEntry) {
-                        logger.warn({ 
+                        logger.debug({ 
                             message: 'Skipping derived future price calculation last_trade_price: book not found for asset', 
                             asset_id: event.asset_id, 
                             event: event,
