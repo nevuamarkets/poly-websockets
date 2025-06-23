@@ -161,10 +161,10 @@ export class GroupSocket {
             handlers.onError?.(new Error(`WebSocket error for group ${group.groupId}: ${err.message}`));
         };
 
-        const handleClose = async (code: number, reason: Buffer) => {
+        const handleClose = async (code: number, reason?: Buffer) => {
             group.status = WebSocketStatus.DEAD;
             clearInterval(this.pingInterval);
-            await handlers.onWSClose?.(group.groupId, code, reason.toString());
+            await handlers.onWSClose?.(group.groupId, code, reason?.toString() || '');
         };
 
         if (group.wsClient) {
