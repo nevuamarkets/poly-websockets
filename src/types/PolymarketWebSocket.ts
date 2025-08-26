@@ -174,6 +174,48 @@ export type TickSizeChangeEvent = {
 export type PolymarketWSEvent = BookEvent | LastTradePriceEvent | PriceChangeEvent | TickSizeChangeEvent;
 
 /**
+ * Represents an order event from the user channel
+ * This event is emitted for order status changes in the user's account
+ */
+export interface OrderEvent {
+    event_type: 'order';
+    order_id: string;
+    asset_id: string;
+    market: string;
+    side: 'BUY' | 'SELL';
+    size: string;
+    price: string;
+    status: 'LIVE' | 'FILLED' | 'CANCELLED' | 'PARTIALLY_FILLED';
+    timestamp: string;
+    original_size?: string;
+    filled_size?: string;
+    remaining_size?: string;
+}
+
+/**
+ * Represents a trade event from the user channel
+ * This event is emitted when the user's order is executed
+ */
+export interface TradeEvent {
+    event_type: 'trade';
+    trade_id: string;
+    order_id: string;
+    asset_id: string;
+    market: string;
+    side: 'BUY' | 'SELL';
+    size: string;
+    price: string;
+    fee: string;
+    timestamp: string;
+    counterparty_order_id?: string;
+}
+
+/**
+ * Union type representing all possible event types from Polymarket User WebSocket
+ */
+export type PolymarketUserWSEvent = OrderEvent | TradeEvent;
+
+/**
  * Represents a price update event
  * 
  * This is an event that is emitted to faciliate price update events. It is 
@@ -232,6 +274,26 @@ export type WebSocketHandlers = {
 }
 
 /**
+ * Represents the handlers for the Polymarket User WebSocket
+ */
+export type UserWebSocketHandlers = {
+    /*
+        Polymarket User WebSocket event handlers
+    */
+
+    // User order updates
+    onOrder?: (events: OrderEvent[]) => Promise<void>;
+
+    // User trade updates
+    onTrade?: (events: TradeEvent[]) => Promise<void>;
+
+    // Error handling
+    onError?: (error: Error) => Promise<void>;
+    onWSClose?: (groupId: string, code: number, reason: string) => Promise<void>;
+    onWSOpen?: (groupId: string, marketIds: string[]) => Promise<void>;
+}
+
+/**
  * Type guard to check if an event is a BookEvent
  * @example
  * if (isBookEvent(event)) {
@@ -277,4 +339,28 @@ export function isPriceChangeEvent(event: PolymarketWSEvent): event is PriceChan
  */
 export function isTickSizeChangeEvent(event: PolymarketWSEvent): event is TickSizeChangeEvent {
     return event?.event_type === 'tick_size_change';
+}
+
+/**
+ * Type guard to check if an event is an OrderEvent
+ * @example
+ * if (isOrderEvent(event)) {
+ *   // event is now typed as OrderEvent
+ *   console.log(event.order_id);
+ * }
+ */
+export function isOrderEvent(event: PolymarketUserWSEvent): event is OrderEvent {
+    return event?.event_type === 'order';
+}
+
+/**
+ * Type guard to check if an event is a TradeEvent
+ * @example
+ * if (isTradeEvent(event)) {
+ *   // event is now typed as TradeEvent
+ *   console.log(event.trade_id);
+ * }
+ */
+export function isTradeEvent(event: PolymarketUserWSEvent): event is TradeEvent {
+    return event?.event_type === 'trade';
 }
