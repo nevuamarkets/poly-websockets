@@ -76,12 +76,12 @@ const userHandlers: UserWebSocketHandlers = {
   onOrder: async (events: OrderEvent[]) => {
     for (const event of events) {
       console.log('Order update:', {
-        orderId: event.order_id,
+        orderId: event.id,
         market: event.market,
         side: event.side,
         status: event.status,
         price: event.price,
-        size: event.size
+        originalSize: event.original_size
       });
     }
   },
@@ -279,15 +279,24 @@ Order status updates from your account:
 ```typescript
 interface OrderEvent {
   event_type: 'order';
-  order_id: string;
+  id: string;
   asset_id: string;
   market: string;
   side: 'BUY' | 'SELL';
-  size: string;
+  original_size: string;
   price: string;
-  status: 'LIVE' | 'FILLED' | 'CANCELLED' | 'PARTIALLY_FILLED';
+  status: 'LIVE' | 'FILLED' | 'CANCELED' | 'PARTIALLY_FILLED';
   timestamp: string;
-  // ... additional optional fields
+  associate_trades: any[] | null;
+  created_at: string;
+  expiration: string;
+  maker_address: string;
+  order_owner: string;
+  order_type: string;
+  outcome: string;
+  owner: string;
+  size_matched: string;
+  type: string;
 }
 ```
 
