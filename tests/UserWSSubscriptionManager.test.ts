@@ -123,14 +123,24 @@ describe('UserWSSubscriptionManager', () => {
         it('should handle order events', async () => {
             const orderEvent: OrderEvent = {
                 event_type: 'order',
-                order_id: 'order123',
+                id: 'order123',
                 asset_id: 'asset123',
                 market: 'market123',
                 side: 'BUY',
-                size: '100',
+                original_size: '100',
                 price: '0.5',
                 status: 'LIVE',
-                timestamp: '1640000000000'
+                timestamp: '1640000000000',
+                associate_trades: null,
+                created_at: '1640000000',
+                expiration: '0',
+                maker_address: '0x1234567890abcdef',
+                order_owner: 'owner123',
+                order_type: 'GTC',
+                outcome: 'Yes',
+                owner: 'owner123',
+                size_matched: '0',
+                type: 'PLACEMENT'
             };
 
             // Call the internal handler directly for testing

@@ -20,13 +20,16 @@ import {
         onOrder: async (events: OrderEvent[]) => {
             for (const event of events) {
                 console.log('Order Event:', {
-                    orderId: event.order_id,
+                    orderId: event.id,
                     market: event.market,
                     side: event.side,
-                    size: event.size,
+                    originalSize: event.original_size,
                     price: event.price,
                     status: event.status,
-                    timestamp: new Date(parseInt(event.timestamp)).toISOString()
+                    timestamp: new Date(parseInt(event.timestamp)).toISOString(),
+                    outcome: event.outcome,
+                    orderType: event.order_type,
+                    sizeMatched: event.size_matched
                 });
             }
         },

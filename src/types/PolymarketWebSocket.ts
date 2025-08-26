@@ -176,20 +176,50 @@ export type PolymarketWSEvent = BookEvent | LastTradePriceEvent | PriceChangeEve
 /**
  * Represents an order event from the user channel
  * This event is emitted for order status changes in the user's account
+ * 
+ * @example
+ * {
+ *   "asset_id": "37045026083435026404065735132496247520024977031626253216128699701238754135467",
+ *   "associate_trades": null,
+ *   "created_at": "1756228682",
+ *   "event_type": "order",
+ *   "expiration": "0",
+ *   "id": "0xd0c6bbfb9670128d3665e21c8b561d65acd4ffa6d98f6465e02ef345bacb764e",
+ *   "maker_address": "0xFCD2fDE8e69005fb6Ef78537a2646ad030B26535",
+ *   "market": "0x9d03267d12f60205c6c1657cd6fcb54c2be59d4139279296b58ddb3532c8f97c",
+ *   "order_owner": "5e955800-3d91-e026-47da-f6183b8a6a20",
+ *   "order_type": "GTC",
+ *   "original_size": "5",
+ *   "outcome": "No",
+ *   "owner": "5e955800-3d91-e026-47da-f6183b8a6a20",
+ *   "price": "0.999",
+ *   "side": "SELL",
+ *   "size_matched": "0",
+ *   "status": "LIVE",
+ *   "timestamp": "1756228682420",
+ *   "type": "PLACEMENT"
+ * }
  */
 export interface OrderEvent {
     event_type: 'order';
-    order_id: string;
+    id: string;
     asset_id: string;
     market: string;
     side: 'BUY' | 'SELL';
-    size: string;
+    original_size: string;
     price: string;
-    status: 'LIVE' | 'FILLED' | 'CANCELLED' | 'PARTIALLY_FILLED';
+    status: 'LIVE' | 'FILLED' | 'CANCELED' | 'PARTIALLY_FILLED';
     timestamp: string;
-    original_size?: string;
-    filled_size?: string;
-    remaining_size?: string;
+    associate_trades: any[] | null;
+    created_at: string;
+    expiration: string;
+    maker_address: string;
+    order_owner: string;
+    order_type: string;
+    outcome: string;
+    owner: string;
+    size_matched: string;
+    type: string;
 }
 
 /**
@@ -346,7 +376,7 @@ export function isTickSizeChangeEvent(event: PolymarketWSEvent): event is TickSi
  * @example
  * if (isOrderEvent(event)) {
  *   // event is now typed as OrderEvent
- *   console.log(event.order_id);
+ *   console.log(event.id);
  * }
  */
 export function isOrderEvent(event: PolymarketUserWSEvent): event is OrderEvent {
