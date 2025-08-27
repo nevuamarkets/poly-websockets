@@ -12,7 +12,8 @@ vi.mock('../src/modules/UserGroupRegistry', () => ({
         clearAllGroups: vi.fn().mockResolvedValue([]),
         getGroupsToReconnectAndCleanup: vi.fn().mockResolvedValue([]),
         findGroupById: vi.fn().mockReturnValue(undefined),
-        hasMarket: vi.fn().mockReturnValue(false)
+        hasMarket: vi.fn().mockReturnValue(false),
+        hasSubscribeToAll: vi.fn().mockReturnValue(false)
     }))
 }));
 
@@ -97,6 +98,22 @@ describe('UserWSSubscriptionManager', () => {
             
             // This would trigger the internal logic
             await manager.addSubscriptions(marketIds);
+            
+            // Verify no errors were thrown
+            expect(mockHandlers.onError).not.toHaveBeenCalled();
+        });
+
+        it('should add subscriptions with empty array (subscribe to all)', async () => {
+            // Test calling with empty array
+            await manager.addSubscriptions([]);
+            
+            // Verify no errors were thrown
+            expect(mockHandlers.onError).not.toHaveBeenCalled();
+        });
+
+        it('should add subscriptions with no arguments (subscribe to all)', async () => {
+            // Test calling with no arguments
+            await manager.addSubscriptions();
             
             // Verify no errors were thrown
             expect(mockHandlers.onError).not.toHaveBeenCalled();

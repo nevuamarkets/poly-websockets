@@ -76,8 +76,14 @@ import {
     ];
 
     try {
+        // Option 1: Subscribe to specific markets
         await userManager.addSubscriptions(marketIds);
         console.log(`Subscribed to user events for ${marketIds.length} markets`);
+
+        // Option 2: Subscribe to all user events (no filtering)
+        // await userManager.addSubscriptions(); // No arguments
+        // await userManager.addSubscriptions([]); // Empty array
+        // console.log('Subscribed to all user events without filtering');
 
         // Keep the process running to receive events
         console.log('Listening for user events... Press Ctrl+C to exit');

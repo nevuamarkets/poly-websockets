@@ -30,6 +30,7 @@ export type UserWebSocketGroup = {
     wsClient: WebSocket | null;
     status: WebSocketStatus;
     auth: ApiCredentials;
+    subscribeToAll?: boolean;
 };
 
 export type SubscriptionManagerOptions = {

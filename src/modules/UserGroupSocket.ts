@@ -29,7 +29,8 @@ export class UserGroupSocket {
      * Establish the websocket connection using the provided Bottleneck limiter.
      */
     public async connect(): Promise<void> {
-        if (this.group.marketIds.size === 0) {
+        // Don't clean up "subscribe to all" groups even if they have no specific markets
+        if (this.group.marketIds.size === 0 && !this.group.subscribeToAll) {
             this.group.status = WebSocketStatus.CLEANUP;
             return;
         }
@@ -71,7 +72,8 @@ export class UserGroupSocket {
             Define handlers within this scope to capture 'this' context
         */
         const handleOpen = async () => {
-            if (group.marketIds.size === 0) {
+            // Don't clean up "subscribe to all" groups even if they have no specific markets
+            if (group.marketIds.size === 0 && !group.subscribeToAll) {
                 group.status = WebSocketStatus.CLEANUP;
                 return;
             }
@@ -92,7 +94,8 @@ export class UserGroupSocket {
             await handlers.onWSOpen?.(group.groupId, Array.from(group.marketIds));
 
             this.pingInterval = setInterval(() => {
-                if (group.marketIds.size === 0) {
+                // Don't clean up "subscribe to all" groups even if they have no specific markets
+                if (group.marketIds.size === 0 && !group.subscribeToAll) {
                     clearInterval(this.pingInterval);
                     group.status = WebSocketStatus.CLEANUP;
                     return;
@@ -169,7 +172,8 @@ export class UserGroupSocket {
             group.wsClient.on('close', handleClose);
         }
 
-        if (group.marketIds.size === 0) {
+        // Don't clean up "subscribe to all" groups even if they have no specific markets
+        if (group.marketIds.size === 0 && !group.subscribeToAll) {
             group.status = WebSocketStatus.CLEANUP;
             return;
         }

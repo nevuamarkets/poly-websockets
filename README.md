@@ -113,6 +113,9 @@ const userManager = new UserWSSubscriptionManager(userHandlers, {
 // Subscribe to user events for specific markets (condition IDs)
 await userManager.addSubscriptions(['condition-id-1', 'condition-id-2']);
 
+// Or subscribe to all user events without filtering
+// await userManager.addSubscriptions(); // No arguments for all events
+
 // Clean up when done
 await userManager.clearState();
 ```
@@ -234,9 +237,21 @@ new UserWSSubscriptionManager(handlers: UserWebSocketHandlers, options: UserSubs
 
 #### Methods
 
-##### `addSubscriptions(marketIds: string[]): Promise<void>`
+##### `addSubscriptions(marketIds?: string[]): Promise<void>`
 
 Adds subscriptions for user events on specific markets (condition IDs).
+
+- When called with specific market IDs: Subscribes to user events only for those markets
+- When called with empty array or no arguments: Subscribes to **all** user events without filtering
+
+```typescript
+// Subscribe to specific markets
+await userManager.addSubscriptions(['condition-id-1', 'condition-id-2']);
+
+// Subscribe to all user events (no filtering)
+await userManager.addSubscriptions(); // No arguments
+await userManager.addSubscriptions([]); // Or empty array
+```
 
 ##### `removeSubscriptions(marketIds: string[]): Promise<void>`
 

@@ -44,17 +44,25 @@ export class UserGroupRegistry {
      */
     public findGroupWithCapacity(newMarketLen: number, maxPerWS: number): string | null {
         for (const group of userWsGroups) {
-            if (group.marketIds.size === 0) continue;
+            // Skip subscribe-to-all groups and empty groups
+            if (group.marketIds.size === 0 || group.subscribeToAll) continue;
             if (group.marketIds.size + newMarketLen <= maxPerWS) return group.groupId;
         }
         return null;
     }
 
     /**
-     * Check if any group contains the market.
+     * Check if any group contains the market or if any group is configured to subscribe to all.
      */
     public hasMarket(marketId: string): boolean {
-        return userWsGroups.some(group => group.marketIds.has(marketId));
+        return userWsGroups.some(group => group.marketIds.has(marketId) || group.subscribeToAll);
+    }
+
+    /**
+     * Check if any group is configured to subscribe to all events.
+     */
+    public hasSubscribeToAll(): boolean {
+        return userWsGroups.some(group => group.subscribeToAll);
     }
 
     /**
@@ -87,8 +95,9 @@ export class UserGroupRegistry {
      * 
      * – Ignores markets that are already subscribed.
      * – Either reuses an existing group with capacity or creates new groups (size ≤ maxPerWS).
+     * – If marketIds is empty, creates a "subscribe to all" group.
      * 
-     * @param marketIds - The marketIds to add.
+     * @param marketIds - The marketIds to add. Empty array means subscribe to all events.
      * @param maxPerWS - The maximum number of markets per WebSocket group.
      * @param auth - Authentication credentials.
      * @returns An array of *new* groupIds that need websocket connections.
@@ -98,6 +107,30 @@ export class UserGroupRegistry {
         let newMarketIds: string[] = []
 
         await this.mutate(groups => {
+            // Handle "subscribe to all" case
+            if (marketIds.length === 0) {
+                // Check if we already have a "subscribe to all" group
+                const existingSubscribeToAllGroup = groups.find(g => g.subscribeToAll);
+                if (existingSubscribeToAllGroup) {
+                    return; // Already have a subscribe-to-all group
+                }
+
+                // Create a new "subscribe to all" group
+                const groupId = uuidv4();
+                const group: UserWebSocketGroup = {
+                    groupId,
+                    marketIds: new Set(),
+                    wsClient: null,
+                    status: WebSocketStatus.PENDING,
+                    auth: { ...auth },
+                    subscribeToAll: true
+                };
+                groups.push(group);
+                groupIdsToConnect.push(groupId);
+                return;
+            }
+
+            // Regular market subscription logic
             newMarketIds = marketIds.filter(id => !groups.some(g => g.marketIds.has(id)));
             if (newMarketIds.length === 0) return;
 
@@ -117,11 +150,18 @@ export class UserGroupRegistry {
             }
         });
 
-        logger.info({
-            message: 'Added user market subscriptions',
-            newMarkets: newMarketIds.length,
-            groupsToConnect: groupIdsToConnect.length
-        });
+        if (marketIds.length === 0) {
+            logger.info({
+                message: 'Added user "subscribe to all" subscription',
+                groupsToConnect: groupIdsToConnect.length
+            });
+        } else {
+            logger.info({
+                message: 'Added user market subscriptions',
+                newMarkets: newMarketIds.length,
+                groupsToConnect: groupIdsToConnect.length
+            });
+        }
 
         return groupIdsToConnect;
     }
@@ -145,8 +185,8 @@ export class UserGroupRegistry {
                         if (!affectedGroupIds.includes(group.groupId)) {
                             affectedGroupIds.push(group.groupId);
                         }
-                        // Mark groups with no markets for cleanup
-                        if (group.marketIds.size === 0) {
+                        // Mark groups with no markets for cleanup (except subscribe-to-all groups)
+                        if (group.marketIds.size === 0 && !group.subscribeToAll) {
                             group.status = WebSocketStatus.CLEANUP;
                         }
                     }
@@ -176,11 +216,11 @@ export class UserGroupRegistry {
                 const group = groups[i];
                 if (!group) continue;
 
-                if (group.status === WebSocketStatus.CLEANUP || group.marketIds.size === 0) {
-                    // Remove groups marked for cleanup
+                if (group.status === WebSocketStatus.CLEANUP || (group.marketIds.size === 0 && !group.subscribeToAll)) {
+                    // Remove groups marked for cleanup or empty groups (except subscribe-to-all groups)
                     groups.splice(i, 1);
-                } else if (group.status === WebSocketStatus.DEAD && group.marketIds.size > 0) {
-                    // Groups that need reconnection
+                } else if (group.status === WebSocketStatus.DEAD && (group.marketIds.size > 0 || group.subscribeToAll)) {
+                    // Groups that need reconnection (either have markets or are subscribe-to-all)
                     groupIds.push(group.groupId);
                 }
             }

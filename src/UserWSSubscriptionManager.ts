@@ -86,16 +86,26 @@ export class UserWSSubscriptionManager {
         This function is called when:
         - a websocket event is received from the Polymarket User WS
         
-        The user handlers will be called **ONLY** for markets that are actively subscribed to by any groups.
+        The user handlers will be called **ONLY** for markets that are actively subscribed to by any groups,
+        or if any group is configured to subscribe to all events.
     */
     private async actOnSubscribedEvents<T extends PolymarketUserWSEvent>(events: T[], action?: (events: T[]) => Promise<void>) {
         if (!action) return;
 
-        const subscribedEvents = events.filter(event => {
-            // For user events, we check if the market is subscribed
-            const marketId = event.market || '';
-            return this.groupRegistry.hasMarket(marketId);
-        });
+        // Check if any group is configured to subscribe to all events
+        const hasSubscribeToAll = this.groupRegistry.hasSubscribeToAll();
+        
+        let subscribedEvents: T[];
+        if (hasSubscribeToAll) {
+            // If subscribing to all, pass through all events
+            subscribedEvents = events;
+        } else {
+            // Otherwise, filter by subscribed markets
+            subscribedEvents = events.filter(event => {
+                const marketId = event.market || '';
+                return this.groupRegistry.hasMarket(marketId);
+            });
+        }
 
         if (subscribedEvents.length > 0) {
             await action(subscribedEvents);
@@ -109,7 +119,7 @@ export class UserWSSubscriptionManager {
         - Finds a group with capacity or creates a new one
         - Creates a new WebSocket client and adds it to the group
     */
-    public async addSubscriptions(marketIdsToAdd: string[]) {
+    public async addSubscriptions(marketIdsToAdd: string[] = []) {
         try {
             const groupIdsToConnect = await this.groupRegistry.addMarkets(marketIdsToAdd, this.maxMarketsPerWS, this.options.auth);
             for (const groupId of groupIdsToConnect) {
