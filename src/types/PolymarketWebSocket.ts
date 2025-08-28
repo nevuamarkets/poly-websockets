@@ -174,6 +174,78 @@ export type TickSizeChangeEvent = {
 export type PolymarketWSEvent = BookEvent | LastTradePriceEvent | PriceChangeEvent | TickSizeChangeEvent;
 
 /**
+ * Represents an order event from the user channel
+ * This event is emitted for order status changes in the user's account
+ * 
+ * @example
+ * {
+ *   "asset_id": "37045026083435026404065735132496247520024977031626253216128699701238754135467",
+ *   "associate_trades": null,
+ *   "created_at": "1756228682",
+ *   "event_type": "order",
+ *   "expiration": "0",
+ *   "id": "0xd0c6bbfb9670128d3665e21c8b561d65acd4ffa6d98f6465e02ef345bacb764e",
+ *   "maker_address": "0xFCD2fDE8e69005fb6Ef78537a2646ad030B26535",
+ *   "market": "0x9d03267d12f60205c6c1657cd6fcb54c2be59d4139279296b58ddb3532c8f97c",
+ *   "order_owner": "5e955800-3d91-e026-47da-f6183b8a6a20",
+ *   "order_type": "GTC",
+ *   "original_size": "5",
+ *   "outcome": "No",
+ *   "owner": "5e955800-3d91-e026-47da-f6183b8a6a20",
+ *   "price": "0.999",
+ *   "side": "SELL",
+ *   "size_matched": "0",
+ *   "status": "LIVE",
+ *   "timestamp": "1756228682420",
+ *   "type": "PLACEMENT"
+ * }
+ */
+export interface OrderEvent {
+    event_type: 'order';
+    id: string;
+    asset_id: string;
+    market: string;
+    side: 'BUY' | 'SELL';
+    original_size: string;
+    price: string;
+    status: 'LIVE' | 'FILLED' | 'CANCELED' | 'PARTIALLY_FILLED';
+    timestamp: string;
+    associate_trades: any[] | null;
+    created_at: string;
+    expiration: string;
+    maker_address: string;
+    order_owner: string;
+    order_type: string;
+    outcome: string;
+    owner: string;
+    size_matched: string;
+    type: string;
+}
+
+/**
+ * Represents a trade event from the user channel
+ * This event is emitted when the user's order is executed
+ */
+export interface TradeEvent {
+    event_type: 'trade';
+    trade_id: string;
+    order_id: string;
+    asset_id: string;
+    market: string;
+    side: 'BUY' | 'SELL';
+    size: string;
+    price: string;
+    fee: string;
+    timestamp: string;
+    counterparty_order_id?: string;
+}
+
+/**
+ * Union type representing all possible event types from Polymarket User WebSocket
+ */
+export type PolymarketUserWSEvent = OrderEvent | TradeEvent;
+
+/**
  * Represents a price update event
  * 
  * This is an event that is emitted to faciliate price update events. It is 
@@ -232,6 +304,26 @@ export type WebSocketHandlers = {
 }
 
 /**
+ * Represents the handlers for the Polymarket User WebSocket
+ */
+export type UserWebSocketHandlers = {
+    /*
+        Polymarket User WebSocket event handlers
+    */
+
+    // User order updates
+    onOrder?: (events: OrderEvent[]) => Promise<void>;
+
+    // User trade updates
+    onTrade?: (events: TradeEvent[]) => Promise<void>;
+
+    // Error handling
+    onError?: (error: Error) => Promise<void>;
+    onWSClose?: (groupId: string, code: number, reason: string) => Promise<void>;
+    onWSOpen?: (groupId: string, marketIds: string[]) => Promise<void>;
+}
+
+/**
  * Type guard to check if an event is a BookEvent
  * @example
  * if (isBookEvent(event)) {
@@ -277,4 +369,28 @@ export function isPriceChangeEvent(event: PolymarketWSEvent): event is PriceChan
  */
 export function isTickSizeChangeEvent(event: PolymarketWSEvent): event is TickSizeChangeEvent {
     return event?.event_type === 'tick_size_change';
+}
+
+/**
+ * Type guard to check if an event is an OrderEvent
+ * @example
+ * if (isOrderEvent(event)) {
+ *   // event is now typed as OrderEvent
+ *   console.log(event.id);
+ * }
+ */
+export function isOrderEvent(event: PolymarketUserWSEvent): event is OrderEvent {
+    return event?.event_type === 'order';
+}
+
+/**
+ * Type guard to check if an event is a TradeEvent
+ * @example
+ * if (isTradeEvent(event)) {
+ *   // event is now typed as TradeEvent
+ *   console.log(event.trade_id);
+ * }
+ */
+export function isTradeEvent(event: PolymarketUserWSEvent): event is TradeEvent {
+    return event?.event_type === 'trade';
 }
