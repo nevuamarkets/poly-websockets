@@ -1,4 +1,32 @@
 /**
+ * Enum for trade sides
+ */
+export enum Side {
+    BUY = 'BUY',
+    SELL = 'SELL'
+}
+
+/**
+ * Enum for trade status
+ */
+export enum TradeStatus {
+    MATCHED = 'MATCHED',
+    MINED = 'MINED',
+    CONFIRMED = 'CONFIRMED',
+    RETRYING = 'RETRYING',
+    FAILED = 'FAILED'
+}
+
+/**
+ * Enum for order type
+ */
+export enum OrderType {
+    PLACEMENT = 'PLACEMENT',
+    UPDATE = 'UPDATE',
+    CANCELLATION = 'CANCELLATION'
+}
+
+/**
  * Represents a single price level in the order book
  * @example
  * { price: "0.01", size: "510000" }
@@ -98,7 +126,7 @@ export type LastTradePriceEvent = {
     fee_rate_bps: string;
     market: string;
     price: string;
-    side: 'BUY' | 'SELL';
+    side: Side;
     size: string;
     timestamp: string;
 };
@@ -123,6 +151,27 @@ export type TickSizeChangeEvent = {
     new_tick_size: string;
     timestamp: string;
 };
+
+/**
+ * Represents a maker order in a trade event
+ * @example
+ * {
+ *   "asset_id": "52114319501245915516055106046884209969926127482827954674443846427813813222426",
+ *   "matched_amount": "10",
+ *   "order_id": "0xff354cd7ca7539dfa9c28d90943ab5779a4eac34b9b37a757d7b32bdfb11790b",
+ *   "outcome": "YES",
+ *   "owner": "9180014b-33c8-9240-a14b-bdca11c0a465",
+ *   "price": "0.57"
+ * }
+ */
+export interface MakerOrder {
+    asset_id: string;
+    matched_amount: string;
+    order_id: string;
+    outcome: string;
+    owner: string;
+    price: string;
+}
 
 /**
  * Union type representing all possible event types from Polymarket WebSocket
@@ -201,43 +250,74 @@ export type PolymarketWSEvent = BookEvent | LastTradePriceEvent | PriceChangeEve
  * }
  */
 export interface OrderEvent {
+    asset_id: string;
+    associate_trades: string[] | null;
     event_type: 'order';
     id: string;
-    asset_id: string;
     market: string;
-    side: 'BUY' | 'SELL';
-    original_size: string;
-    price: string;
-    status: 'LIVE' | 'FILLED' | 'CANCELED' | 'PARTIALLY_FILLED';
-    timestamp: string;
-    associate_trades: any[] | null;
-    created_at: string;
-    expiration: string;
-    maker_address: string;
     order_owner: string;
-    order_type: string;
+    original_size: string;
     outcome: string;
     owner: string;
+    price: string;
+    side: Side;
     size_matched: string;
-    type: string;
+    timestamp: string;
+    type: OrderType;
 }
 
 /**
  * Represents a trade event from the user channel
  * This event is emitted when the user's order is executed
+ * 
+ * @example
+ * {
+ *   "asset_id": "52114319501245915516055106046884209969926127482827954674443846427813813222426",
+ *   "event_type": "trade",
+ *   "id": "28c4d2eb-bbea-40e7-a9f0-b2fdb56b2c2e",
+ *   "last_update": "1672290701",
+ *   "maker_orders": [
+ *     {
+ *       "asset_id": "52114319501245915516055106046884209969926127482827954674443846427813813222426",
+ *       "matched_amount": "10",
+ *       "order_id": "0xff354cd7ca7539dfa9c28d90943ab5779a4eac34b9b37a757d7b32bdfb11790b",
+ *       "outcome": "YES",
+ *       "owner": "9180014b-33c8-9240-a14b-bdca11c0a465",
+ *       "price": "0.57"
+ *     }
+ *   ],
+ *   "market": "0xbd31dc8a20211944f6b70f31557f1001557b59905b7738480ca09bd4532f84af",
+ *   "matchtime": "1672290701",
+ *   "outcome": "YES",
+ *   "owner": "9180014b-33c8-9240-a14b-bdca11c0a465",
+ *   "price": "0.57",
+ *   "side": "BUY",
+ *   "size": "10",
+ *   "status": "MATCHED",
+ *   "taker_order_id": "0x06bc63e346ed4ceddce9efd6b3af37c8f8f440c92fe7da6b2d0f9e4ccbc50c42",
+ *   "timestamp": "1672290701",
+ *   "trade_owner": "9180014b-33c8-9240-a14b-bdca11c0a465",
+ *   "type": "TRADE"
+ * }
  */
 export interface TradeEvent {
-    event_type: 'trade';
-    trade_id: string;
-    order_id: string;
     asset_id: string;
+    event_type: 'trade';
+    id: string;
+    last_update: string;
+    maker_orders: MakerOrder[];
     market: string;
-    side: 'BUY' | 'SELL';
-    size: string;
+    matchtime: string;
+    outcome: string;
+    owner: string;
     price: string;
-    fee: string;
+    side: Side;
+    size: string;
+    status: TradeStatus;
+    taker_order_id: string;
     timestamp: string;
-    counterparty_order_id?: string;
+    trade_owner: string;
+    type: 'TRADE';
 }
 
 /**
@@ -388,7 +468,7 @@ export function isOrderEvent(event: PolymarketUserWSEvent): event is OrderEvent 
  * @example
  * if (isTradeEvent(event)) {
  *   // event is now typed as TradeEvent
- *   console.log(event.trade_id);
+ *   console.log(event.id);
  * }
  */
 export function isTradeEvent(event: PolymarketUserWSEvent): event is TradeEvent {

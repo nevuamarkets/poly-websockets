@@ -2,7 +2,10 @@ import {
     UserWSSubscriptionManager,
     UserWebSocketHandlers,
     OrderEvent,
-    TradeEvent
+    TradeEvent,
+    Side,
+    OrderType,
+    TradeStatus
 } from '@nevuamarkets/poly-websockets';
 
 // Example usage of the User Channel WebSocket
@@ -25,11 +28,12 @@ import {
                     side: event.side,
                     originalSize: event.original_size,
                     price: event.price,
-                    status: event.status,
                     timestamp: new Date(parseInt(event.timestamp)).toISOString(),
                     outcome: event.outcome,
-                    orderType: event.order_type,
-                    sizeMatched: event.size_matched
+                    orderType: event.type,
+                    sizeMatched: event.size_matched,
+                    owner: event.owner,
+                    orderOwner: event.order_owner
                 });
             }
         },
@@ -37,14 +41,17 @@ import {
         onTrade: async (events: TradeEvent[]) => {
             for (const event of events) {
                 console.log('Trade Event:', {
-                    tradeId: event.trade_id,
-                    orderId: event.order_id,
+                    tradeId: event.id,
                     market: event.market,
                     side: event.side,
                     size: event.size,
                     price: event.price,
-                    fee: event.fee,
-                    timestamp: new Date(parseInt(event.timestamp)).toISOString()
+                    status: event.status,
+                    outcome: event.outcome,
+                    timestamp: new Date(parseInt(event.timestamp)).toISOString(),
+                    takerOrderId: event.taker_order_id,
+                    tradeOwner: event.trade_owner,
+                    makerOrders: event.maker_orders.length
                 });
             }
         },
