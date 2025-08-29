@@ -158,7 +158,8 @@ describe('WSSubscriptionManager', () => {
                 expect.any(Object),
                 mockBottleneck,
                 mockBookCache,
-                expect.any(Object)
+                expect.any(Object),
+                true
             );
             expect(mockGroupSocket.connect).toHaveBeenCalledTimes(1);
         });
@@ -497,6 +498,84 @@ describe('WSSubscriptionManager', () => {
             await vi.waitFor(() => {
                 expect(mockHandlers.onError).toHaveBeenCalledWith(new Error('Cleanup failed'));
             });
+        });
+    });
+
+    describe('initialDump option', () => {
+        it('should default to true when no options provided', async () => {
+            const managerWithDefaults = new WSSubscriptionManager(mockHandlers);
+            const assetIds = ['asset1', 'asset2'];
+            const groupIds = ['group1'];
+
+            mockGroupRegistry.addAssets.mockResolvedValue(groupIds);
+            mockGroupRegistry.findGroupById.mockReturnValue(createMockGroup('group1', assetIds));
+
+            await managerWithDefaults.addSubscriptions(assetIds);
+
+            expect(MockedGroupSocket).toHaveBeenCalledWith(
+                expect.any(Object),
+                expect.any(Object),
+                expect.any(Object),
+                expect.any(Object),
+                true
+            );
+        });
+
+        it('should pass initialDump=true when explicitly set', async () => {
+            const managerWithInitialDump = new WSSubscriptionManager(mockHandlers, { initialDump: true });
+            const assetIds = ['asset1', 'asset2'];
+            const groupIds = ['group1'];
+
+            mockGroupRegistry.addAssets.mockResolvedValue(groupIds);
+            mockGroupRegistry.findGroupById.mockReturnValue(createMockGroup('group1', assetIds));
+
+            await managerWithInitialDump.addSubscriptions(assetIds);
+
+            expect(MockedGroupSocket).toHaveBeenCalledWith(
+                expect.any(Object),
+                expect.any(Object),
+                expect.any(Object),
+                expect.any(Object),
+                true
+            );
+        });
+
+        it('should pass initialDump=false when explicitly set', async () => {
+            const managerWithoutInitialDump = new WSSubscriptionManager(mockHandlers, { initialDump: false });
+            const assetIds = ['asset1', 'asset2'];
+            const groupIds = ['group1'];
+
+            mockGroupRegistry.addAssets.mockResolvedValue(groupIds);
+            mockGroupRegistry.findGroupById.mockReturnValue(createMockGroup('group1', assetIds));
+
+            await managerWithoutInitialDump.addSubscriptions(assetIds);
+
+            expect(MockedGroupSocket).toHaveBeenCalledWith(
+                expect.any(Object),
+                expect.any(Object),
+                expect.any(Object),
+                expect.any(Object),
+                false
+            );
+        });
+
+        it('should handle undefined initialDump option correctly', async () => {
+            const managerWithUndefined = new WSSubscriptionManager(mockHandlers, { initialDump: undefined });
+            const assetIds = ['asset1', 'asset2'];
+            const groupIds = ['group1'];
+
+            mockGroupRegistry.addAssets.mockResolvedValue(groupIds);
+            mockGroupRegistry.findGroupById.mockReturnValue(createMockGroup('group1', assetIds));
+
+            await managerWithUndefined.addSubscriptions(assetIds);
+
+            expect(MockedGroupSocket).toHaveBeenCalledWith(
+                expect.any(Object),
+                expect.any(Object),
+                expect.any(Object),
+                expect.any(Object),
+                true
+            );
         });
     });
 }); 

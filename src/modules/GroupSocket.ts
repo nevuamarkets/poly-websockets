@@ -30,6 +30,7 @@ export class GroupSocket {
         private limiter: Bottleneck,
         private bookCache: OrderBookCache,
         private handlers: WebSocketHandlers,
+        private initialDump: boolean = true,
     ) {}
 
     /**
@@ -86,7 +87,11 @@ export class GroupSocket {
 
             group.status = WebSocketStatus.ALIVE;
 
-            group.wsClient!.send(JSON.stringify({ assets_ids: Array.from(group.assetIds), type: 'market' }));
+            group.wsClient!.send(JSON.stringify({ 
+                assets_ids: Array.from(group.assetIds), 
+                type: 'market',
+                initial_dump: this.initialDump
+            }));
             await handlers.onWSOpen?.(group.groupId, Array.from(group.assetIds));
 
             this.pingInterval = setInterval(() => {

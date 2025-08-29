@@ -33,6 +33,7 @@ class WSSubscriptionManager {
     private bookCache: OrderBookCache;
     private reconnectAndCleanupIntervalMs: number;
     private maxMarketsPerWS: number;
+    private initialDump: boolean;
 
     constructor(userHandlers: WebSocketHandlers, options?: SubscriptionManagerOptions) {
         this.groupRegistry = new GroupRegistry();
@@ -46,6 +47,7 @@ class WSSubscriptionManager {
 
         this.reconnectAndCleanupIntervalMs = options?.reconnectAndCleanupIntervalMs || DEFAULT_RECONNECT_AND_CLEANUP_INTERVAL_MS;
         this.maxMarketsPerWS = options?.maxMarketsPerWS || DEFAULT_MAX_MARKETS_PER_WS;
+        this.initialDump = options?.initialDump ?? true;
 
         this.handlers = {
             onBook: async (events: BookEvent[]) => {
@@ -188,7 +190,7 @@ class WSSubscriptionManager {
             return;
         }
 
-        const groupSocket = new GroupSocket(group, this.burstLimiter, this.bookCache, handlers);
+        const groupSocket = new GroupSocket(group, this.burstLimiter, this.bookCache, handlers, this.initialDump);
         try {
             await groupSocket.connect();
         } catch (error) {
