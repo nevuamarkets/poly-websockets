@@ -116,7 +116,7 @@ describe('WebSocket Error Handling on Open', () => {
             
             // Send should have been called with correct subscription message
             expect(mockWS.send).toHaveBeenCalledWith(
-                JSON.stringify({ assets_ids: ['asset1', 'asset2'], type: 'market' })
+                JSON.stringify({ assets_ids: ['asset1', 'asset2'], type: 'market', initial_dump: true })
             );
             
             // onWSOpen should be called
