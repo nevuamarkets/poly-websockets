@@ -153,7 +153,7 @@ describe('WSSubscriptionManager', () => {
 
             await manager.addSubscriptions(assetIds);
 
-            expect(mockGroupRegistry.addAssets).toHaveBeenCalledWith(assetIds, 100);
+            expect(mockGroupRegistry.addAssets).toHaveBeenCalledWith(assetIds, Number.MAX_SAFE_INTEGER);
             expect(MockedGroupSocket).toHaveBeenCalledWith(
                 expect.any(Object),
                 mockBottleneck,
@@ -460,7 +460,7 @@ describe('WSSubscriptionManager', () => {
 
             await manager.addSubscriptions(assetIds);
 
-            expect(mockGroupRegistry.addAssets).toHaveBeenCalledWith(assetIds, 100);
+            expect(mockGroupRegistry.addAssets).toHaveBeenCalledWith(assetIds, Number.MAX_SAFE_INTEGER);
             expect(mockGroupSocket.connect).toHaveBeenCalled();
 
             // Remove subscriptions
