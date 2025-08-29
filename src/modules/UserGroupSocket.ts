@@ -90,7 +90,18 @@ export class UserGroupSocket {
                 }
             };
 
-            group.wsClient!.send(JSON.stringify(subscriptionMessage));
+            try {
+                group.wsClient!.send(JSON.stringify(subscriptionMessage));
+            } catch (err) {
+                logger.warn({
+                    message: 'Failed to send subscription message on WebSocket open',
+                    error: err,
+                    groupId: group.groupId,
+                    marketIdsLength: group.marketIds.size,
+                });
+                group.status = WebSocketStatus.DEAD;
+                return;
+            }
             await handlers.onWSOpen?.(group.groupId, Array.from(group.marketIds));
 
             this.pingInterval = setInterval(() => {
