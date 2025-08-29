@@ -41,6 +41,9 @@ export type SubscriptionManagerOptions = {
 
     // How many assets to allow per WebSocket (default: unlimited since Polymarket removed the 100 token limit)
     maxMarketsPerWS?: number;
+
+    // Whether to receive the initial order book state when subscribing (default: true)
+    initialDump?: boolean;
 }
 
 export type UserSubscriptionManagerOptions = {

@@ -30,6 +30,7 @@ export class GroupSocket {
         private limiter: Bottleneck,
         private bookCache: OrderBookCache,
         private handlers: WebSocketHandlers,
+        private initialDump: boolean = true,
     ) {}
 
     /**
@@ -87,7 +88,11 @@ export class GroupSocket {
             group.status = WebSocketStatus.ALIVE;
 
             try {
-                group.wsClient!.send(JSON.stringify({ assets_ids: Array.from(group.assetIds), type: 'market' }));
+                group.wsClient!.send(JSON.stringify({ 
+                    assets_ids: Array.from(group.assetIds), 
+                    type: 'market',
+                    initial_dump: this.initialDump
+                }));
             } catch (err) {
                 logger.warn({
                     message: 'Failed to send subscription message on WebSocket open',
