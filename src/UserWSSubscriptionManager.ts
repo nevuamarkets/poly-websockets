@@ -19,7 +19,9 @@ import { logger } from './logger';
 const BURST_LIMIT_PER_SECOND = 5;
 
 const DEFAULT_RECONNECT_AND_CLEANUP_INTERVAL_MS = ms('10s');
-const DEFAULT_MAX_MARKETS_PER_WS = 100;
+// Polymarket removed the 100 token subscription limit on May 28, 2025
+// See: https://docs.polymarket.com/changelog/changelog
+const DEFAULT_MAX_MARKETS_PER_WS = Number.MAX_SAFE_INTEGER;
 
 export class UserWSSubscriptionManager {
     private handlers: UserWebSocketHandlers;

@@ -39,7 +39,7 @@ export type SubscriptionManagerOptions = {
     // How often to check for groups to reconnect and cleanup
     reconnectAndCleanupIntervalMs?: number;
 
-    // How many assets to allow per WebSocket
+    // How many assets to allow per WebSocket (default: unlimited since Polymarket removed the 100 token limit)
     maxMarketsPerWS?: number;
 
     // Whether to receive the initial order book state when subscribing (default: true)
@@ -52,7 +52,7 @@ export type UserSubscriptionManagerOptions = {
     // How often to check for groups to reconnect and cleanup
     reconnectAndCleanupIntervalMs?: number;
 
-    // How many markets to allow per WebSocket
+    // How many markets to allow per WebSocket (default: unlimited since Polymarket removed the 100 token limit)
     maxMarketsPerWS?: number;
 
     // Authentication credentials for user channel

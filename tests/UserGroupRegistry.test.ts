@@ -188,5 +188,23 @@ describe('UserGroupRegistry', () => {
             expect(registry.hasMarket('market2')).toBe(true);
             expect(registry.hasMarket('market3')).toBe(true);
         });
+
+        it('should handle large number of markets with unlimited default (Number.MAX_SAFE_INTEGER)', async () => {
+            // Test that we can add 1000 markets and they all go into a single group when using unlimited capacity
+            const manyMarkets = Array.from({ length: 1000 }, (_, i) => `market${i}`);
+            const groupIds = await registry.addMarkets(manyMarkets, Number.MAX_SAFE_INTEGER, mockAuth);
+            
+            expect(groupIds).toHaveLength(1);
+            const snapshot = registry.snapshot();
+            expect(snapshot).toHaveLength(1);
+            
+            const group = snapshot[0];
+            expect(group.marketIds.size).toBe(1000);
+            
+            // Verify all markets are present
+            manyMarkets.forEach(market => {
+                expect(group.marketIds.has(market)).toBe(true);
+            });
+        });
     });
 });

@@ -87,11 +87,22 @@ export class GroupSocket {
 
             group.status = WebSocketStatus.ALIVE;
 
-            group.wsClient!.send(JSON.stringify({ 
-                assets_ids: Array.from(group.assetIds), 
-                type: 'market',
-                initial_dump: this.initialDump
-            }));
+            try {
+                group.wsClient!.send(JSON.stringify({ 
+                    assets_ids: Array.from(group.assetIds), 
+                    type: 'market',
+                    initial_dump: this.initialDump
+                }));
+            } catch (err) {
+                logger.warn({
+                    message: 'Failed to send subscription message on WebSocket open',
+                    error: err,
+                    groupId: group.groupId,
+                    assetIdsLength: group.assetIds.size,
+                });
+                group.status = WebSocketStatus.DEAD;
+                return;
+            }
             await handlers.onWSOpen?.(group.groupId, Array.from(group.assetIds));
 
             this.pingInterval = setInterval(() => {
