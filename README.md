@@ -61,7 +61,10 @@ import {
   UserWSSubscriptionManager,
   UserWebSocketHandlers,
   OrderEvent,
-  TradeEvent
+  TradeEvent,
+  Side,
+  OrderType,
+  TradeStatus
 } from '@nevuamarkets/poly-websockets';
 
 // Your Polymarket API credentials
@@ -293,25 +296,20 @@ interface ApiCredentials {
 Order status updates from your account:
 ```typescript
 interface OrderEvent {
+  asset_id: string;
+  associate_trades: string[] | null;
   event_type: 'order';
   id: string;
-  asset_id: string;
   market: string;
-  side: 'BUY' | 'SELL';
-  original_size: string;
-  price: string;
-  status: 'LIVE' | 'FILLED' | 'CANCELED' | 'PARTIALLY_FILLED';
-  timestamp: string;
-  associate_trades: any[] | null;
-  created_at: string;
-  expiration: string;
-  maker_address: string;
   order_owner: string;
-  order_type: string;
+  original_size: string;
   outcome: string;
   owner: string;
+  price: string;
+  side: Side;
   size_matched: string;
-  type: string;
+  timestamp: string;
+  type: OrderType;
 }
 ```
 
@@ -319,17 +317,59 @@ interface OrderEvent {
 Trade execution notifications:
 ```typescript
 interface TradeEvent {
-  event_type: 'trade';
-  trade_id: string;
-  order_id: string;
   asset_id: string;
+  event_type: 'trade';
+  id: string;
+  last_update: string;
+  maker_orders: MakerOrder[];
   market: string;
-  side: 'BUY' | 'SELL';
-  size: string;
+  matchtime: string;
+  outcome: string;
+  owner: string;
   price: string;
-  fee: string;
+  side: Side;
+  size: string;
+  status: TradeStatus;
+  taker_order_id: string;
   timestamp: string;
-  // ... additional optional fields
+  trade_owner: string;
+  type: 'TRADE';
+}
+```
+
+#### Supporting Types
+
+**MakerOrder**
+```typescript
+interface MakerOrder {
+  asset_id: string;
+  matched_amount: string;
+  order_id: string;
+  outcome: string;
+  owner: string;
+  price: string;
+}
+```
+
+**Enums**
+```typescript
+enum Side {
+  BUY = 'BUY',
+  SELL = 'SELL'
+}
+
+enum TradeStatus {
+  MATCHED = 'MATCHED',
+  MINED = 'MINED',
+  CONFIRMED = 'CONFIRMED',
+  RETRYING = 'RETRYING',
+  FAILED = 'FAILED'
+}
+
+enum OrderType {
+  PLACEMENT = 'PLACEMENT',
+  UPDATE = 'UPDATE',
+  CANCELLATION = 'CANCELLATION'
 }
 ```
 

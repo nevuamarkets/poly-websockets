@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { UserWSSubscriptionManager } from '../src/UserWSSubscriptionManager';
-import { UserWebSocketHandlers, ApiCredentials, OrderEvent, TradeEvent } from '../src/types/PolymarketWebSocket';
+import { 
+    UserWebSocketHandlers, 
+    ApiCredentials, 
+    OrderEvent, 
+    TradeEvent, 
+    Side, 
+    OrderType, 
+    TradeStatus 
+} from '../src/types/PolymarketWebSocket';
 import { UserSubscriptionManagerOptions } from '../src/types/WebSocketSubscriptions';
 import Bottleneck from 'bottleneck';
 
@@ -139,25 +147,20 @@ describe('UserWSSubscriptionManager', () => {
     describe('event handling', () => {
         it('should handle order events', async () => {
             const orderEvent: OrderEvent = {
+                asset_id: 'asset123',
+                associate_trades: null,
                 event_type: 'order',
                 id: 'order123',
-                asset_id: 'asset123',
                 market: 'market123',
-                side: 'BUY',
-                original_size: '100',
-                price: '0.5',
-                status: 'LIVE',
-                timestamp: '1640000000000',
-                associate_trades: null,
-                created_at: '1640000000',
-                expiration: '0',
-                maker_address: '0x1234567890abcdef',
                 order_owner: 'owner123',
-                order_type: 'GTC',
+                original_size: '100',
                 outcome: 'Yes',
                 owner: 'owner123',
+                price: '0.5',
+                side: Side.BUY,
                 size_matched: '0',
-                type: 'PLACEMENT'
+                timestamp: '1640000000000',
+                type: OrderType.PLACEMENT
             };
 
             // Call the internal handler directly for testing
@@ -170,16 +173,30 @@ describe('UserWSSubscriptionManager', () => {
 
         it('should handle trade events', async () => {
             const tradeEvent: TradeEvent = {
-                event_type: 'trade',
-                trade_id: 'trade123',
-                order_id: 'order123',
                 asset_id: 'asset123',
+                event_type: 'trade',
+                id: 'trade123',
+                last_update: '1640000000',
+                maker_orders: [{
+                    asset_id: 'asset123',
+                    matched_amount: '50',
+                    order_id: 'order123',
+                    outcome: 'YES',
+                    owner: 'owner123',
+                    price: '0.6'
+                }],
                 market: 'market123',
-                side: 'SELL',
-                size: '50',
+                matchtime: '1640000000',
+                outcome: 'YES',
+                owner: 'owner123',
                 price: '0.6',
-                fee: '0.01',
-                timestamp: '1640000000000'
+                side: Side.SELL,
+                size: '50',
+                status: TradeStatus.MATCHED,
+                taker_order_id: 'taker123',
+                timestamp: '1640000000000',
+                trade_owner: 'owner123',
+                type: 'TRADE'
             };
 
             // Call the internal handler directly for testing
