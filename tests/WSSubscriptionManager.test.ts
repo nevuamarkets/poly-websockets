@@ -10,7 +10,8 @@ import {
     LastTradePriceEvent,
     PriceChangeEvent,
     TickSizeChangeEvent,
-    PolymarketPriceUpdateEvent
+    PolymarketPriceUpdateEvent,
+    Side
 } from '../src/types/PolymarketWebSocket';
 import { WebSocketGroup, WebSocketStatus } from '../src/types/WebSocketSubscriptions';
 
@@ -56,7 +57,7 @@ describe('WSSubscriptionManager', () => {
         timestamp: '1234567890',
         hash: 'test-hash',
         event_type: 'price_change',
-        changes: [{ price: '0.50', side: 'buy', size: '100' }]
+        changes: [{ price: '0.50', side: Side.BUY, size: '100' }]
     });
 
     beforeEach(() => {
