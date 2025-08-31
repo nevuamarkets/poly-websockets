@@ -52,7 +52,7 @@ export type PriceLevel = {
  */
 export type PriceChangeEvent = {
     asset_id: string;
-    changes: { price: string; side: string; size: string }[];
+    changes: { price: string; side: Side; size: string }[];
     event_type: 'price_change';
     hash: string;
     market: string;
