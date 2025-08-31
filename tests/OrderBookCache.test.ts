@@ -5,6 +5,7 @@ import {
     BookEvent,
     PriceChangeEvent,
     PriceLevel,
+    Side,
 } from '../src/types/PolymarketWebSocket';
 
 const ASSET_ID = 'asset-1'; 
@@ -111,7 +112,7 @@ describe('OrderBookCache', () => {
             timestamp: '1',
             event_type: 'price_change',
             changes: [
-                { price: '0.90', side: 'BUY', size: '3' }
+                { price: '0.90', side: Side.BUY, size: '3' }
             ]
         };
 

@@ -303,6 +303,24 @@ describe('GroupRegistry', () => {
             // Restore original method
             registry.findGroupWithCapacity = originalFind;
         });
+
+        it('should handle large number of assets with unlimited default (Number.MAX_SAFE_INTEGER)', async () => {
+            // Test that we can add 1000 assets and they all go into a single group when using unlimited capacity
+            const manyAssets = Array.from({ length: 1000 }, (_, i) => `asset${i}`);
+            const groupIds = await registry.addAssets(manyAssets, Number.MAX_SAFE_INTEGER);
+            
+            expect(groupIds).toHaveLength(1);
+            const snapshot = registry.snapshot();
+            expect(snapshot).toHaveLength(1);
+            
+            const group = snapshot[0];
+            expect(group.assetIds.size).toBe(1000);
+            
+            // Verify all assets are present
+            manyAssets.forEach(asset => {
+                expect(group.assetIds.has(asset)).toBe(true);
+            });
+        });
     });
 
     describe('removeAssets', () => {
