@@ -74,6 +74,12 @@ export class GroupSocket {
     private setupEventHandlers() {
         const group = this.group;
         const handlers = this.handlers;
+        
+        // Capture the current WebSocket instance to avoid race conditions
+        const currentWebSocket = group.wsClient;
+        if (!currentWebSocket) {
+            return;
+        }
 
         /*
             Define handlers within this scope to capture 'this' context
@@ -84,9 +90,28 @@ export class GroupSocket {
                 return;
             }
 
+            // Verify this handler is for the current WebSocket instance
+            if (currentWebSocket !== group.wsClient) {
+                logger.warn({
+                    message: 'handleOpen called for stale WebSocket instance',
+                    groupId: group.groupId,
+                });
+                return;
+            }
+
+            // Additional safety check for readyState
+            if (currentWebSocket.readyState !== WebSocket.OPEN) {
+                logger.warn({
+                    message: 'handleOpen called but WebSocket is not in OPEN state',
+                    groupId: group.groupId,
+                    readyState: currentWebSocket.readyState,
+                });
+                return;
+            }
+
             group.status = WebSocketStatus.ALIVE;
 
-            group.wsClient!.send(JSON.stringify({ assets_ids: Array.from(group.assetIds), type: 'market' }));
+            currentWebSocket.send(JSON.stringify({ assets_ids: Array.from(group.assetIds), type: 'market' }));
             await handlers.onWSOpen?.(group.groupId, Array.from(group.assetIds));
 
             this.pingInterval = setInterval(() => {
@@ -96,12 +121,18 @@ export class GroupSocket {
                     return;
                 }
 
-                if (!group.wsClient) {
+                // Verify we're still using the same WebSocket
+                if (currentWebSocket !== group.wsClient) {
+                    clearInterval(this.pingInterval);
+                    return;
+                }
+
+                if (!currentWebSocket || currentWebSocket.readyState !== WebSocket.OPEN) {
                     clearInterval(this.pingInterval);
                     group.status = WebSocketStatus.DEAD;
                     return;
                 }
-                group.wsClient.ping();
+                currentWebSocket.ping();
             }, randomInt(ms('15s'), ms('25s')));
         };
 
@@ -167,25 +198,18 @@ export class GroupSocket {
             await handlers.onWSClose?.(group.groupId, code, reason?.toString() || '');
         };
 
-        if (group.wsClient) {
-            // Remove any existing handlers
-            group.wsClient.removeAllListeners();
+        // Remove any existing handlers
+        currentWebSocket.removeAllListeners();
 
-            // Add the handlers
-            group.wsClient.on('open', handleOpen);
-            group.wsClient.on('message', handleMessage);
-            group.wsClient.on('pong', handlePong);
-            group.wsClient.on('error', handleError);
-            group.wsClient.on('close', handleClose);
-        }
+        // Add the handlers
+        currentWebSocket.on('open', handleOpen);
+        currentWebSocket.on('message', handleMessage);
+        currentWebSocket.on('pong', handlePong);
+        currentWebSocket.on('error', handleError);
+        currentWebSocket.on('close', handleClose);
 
         if (group.assetIds.size === 0) {
             group.status = WebSocketStatus.CLEANUP;
-            return;
-        }
-
-        if (!group.wsClient) {
-            group.status = WebSocketStatus.DEAD;
             return;
         }
     }
