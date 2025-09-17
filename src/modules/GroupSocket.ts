@@ -137,12 +137,19 @@ export class GroupSocket {
         };
 
         const handleMessage = async (data: Buffer) => {
+            const messageStr = data.toString();
+
+            // Handle PONG messages that might be sent to message handler during handler reattachment
+            if (messageStr === 'PONG') {
+                return;
+            }
+
             let events: PolymarketWSEvent[] = [];
             try {
-                const parsedData: any = JSON.parse(data.toString());
+                const parsedData: any = JSON.parse(messageStr);
                 events = Array.isArray(parsedData) ? parsedData : [parsedData];
             } catch (err) {
-                await handlers.onError?.(new Error(`Not JSON: ${data.toString()}`));
+                await handlers.onError?.(new Error(`Not JSON: ${messageStr}`));
                 return;
             }
 
