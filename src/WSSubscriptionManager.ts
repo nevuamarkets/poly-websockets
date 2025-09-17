@@ -8,7 +8,8 @@ import {
     LastTradePriceEvent,
     TickSizeChangeEvent,
     PolymarketWSEvent,
-    PolymarketPriceUpdateEvent
+    PolymarketPriceUpdateEvent,
+    isPriceChangeEvent
 } from './types/PolymarketWebSocket';
 import { SubscriptionManagerOptions } from './types/WebSocketSubscriptions';
 
@@ -111,16 +112,37 @@ class WSSubscriptionManager {
 
         // Filter out events that are not subscribed to by any groups
         events = _.filter(events, (event: T) => {
-            const groupIndices = this.groupRegistry.getGroupIndicesForAsset(event.asset_id);
-
-            if (groupIndices.length > 1) {
-                logger.warn({
-                    message: 'Found multiple groups for asset',
-                    asset_id: event.asset_id,
-                    group_indices: groupIndices
+            // Handle PriceChangeEvent which doesn't have asset_id at root
+            if (isPriceChangeEvent(event)) {
+                // Check if any of the price_changes are subscribed
+                return event.price_changes.some(price_change_item => {
+                    const groupIndices = this.groupRegistry.getGroupIndicesForAsset(price_change_item.asset_id);
+                    if (groupIndices.length > 1) {
+                        logger.warn({
+                            message: 'Found multiple groups for asset',
+                            asset_id: price_change_item.asset_id,
+                            group_indices: groupIndices
+                        });
+                    }
+                    return groupIndices.length > 0;
                 });
             }
-            return groupIndices.length > 0;
+            
+            // For all other events, check asset_id at root
+            if ('asset_id' in event) {
+                const groupIndices = this.groupRegistry.getGroupIndicesForAsset(event.asset_id);
+
+                if (groupIndices.length > 1) {
+                    logger.warn({
+                        message: 'Found multiple groups for asset',
+                        asset_id: event.asset_id,
+                        group_indices: groupIndices
+                    });
+                }
+                return groupIndices.length > 0;
+            }
+            
+            return false;
         });
 
         await action?.(events);

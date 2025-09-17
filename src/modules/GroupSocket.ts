@@ -146,7 +146,15 @@ export class GroupSocket {
                 return;
             }
 
-            events = _.filter(events, (event: PolymarketWSEvent) => _.size(event.asset_id) > 0);
+            // Filter events to ensure validity
+            events = _.filter(events, (event: PolymarketWSEvent) => {
+                // For price_change events, check that price_changes array exists
+                if (isPriceChangeEvent(event)) {
+                    return event.price_changes && event.price_changes.length > 0;
+                }
+                // For all other events, check asset_id
+                return _.size(event.asset_id) > 0;
+            });
 
             const bookEvents: BookEvent[] = [];
             const lastTradeEvents: LastTradePriceEvent[] = [];
@@ -158,21 +166,32 @@ export class GroupSocket {
                     Skip events for asset ids that are not in the group to ensure that
                     we don't get stale events for assets that were removed.
                 */
-                if (!group.assetIds.has(event.asset_id)) {
-                    continue;
-                }
+                if (isPriceChangeEvent(event)) {
+                    // Check if any of the price_changes are for assets in this group
+                    const relevantChanges = event.price_changes.filter(price_change_item => group.assetIds.has(price_change_item.asset_id));
+                    if (relevantChanges.length === 0) {
+                        continue;
+                    }
+                    // Only include relevant changes
+                    priceChangeEvents.push({
+                        ...event,
+                        price_changes: relevantChanges
+                    });
+                } else {
+                    // For all other events, check asset_id at root
+                    if (!group.assetIds.has(event.asset_id!)) {
+                        continue;
+                    }
 
-                if (isBookEvent(event)) {
-                    bookEvents.push(event);
-                } else if (isLastTradePriceEvent(event)) {
-                    lastTradeEvents.push(event);
-                } else if (isTickSizeChangeEvent(event)) {
-                    tickEvents.push(event);
-                } else if (isPriceChangeEvent(event)) {
-                    priceChangeEvents.push(event);
-                }
-                else {
-                    await handlers.onError?.(new Error(`Unknown event: ${JSON.stringify(event)}`));
+                    if (isBookEvent(event)) {
+                        bookEvents.push(event);
+                    } else if (isLastTradePriceEvent(event)) {
+                        lastTradeEvents.push(event);
+                    } else if (isTickSizeChangeEvent(event)) {
+                        tickEvents.push(event);
+                    } else {
+                        await handlers.onError?.(new Error(`Unknown event: ${JSON.stringify(event)}`));
+                    }
                 }
             }
 
@@ -239,63 +258,67 @@ export class GroupSocket {
                 } catch (err: any) {
                     logger.debug({ 
                         message: `Skipping derived future price calculation price_change: book not found for asset`, 
-                        asset_id: event.asset_id, 
                         event: event,
                         error: err?.message
                     });
                     continue;
                 }
 
-                let spreadOver10Cents: boolean;
-                try {
-                    spreadOver10Cents = this.bookCache.spreadOver(event.asset_id, 0.1);
-                } catch (err: any) {
-                    logger.debug({ 
-                        message: 'Skipping derived future price calculation for price_change: error calculating spread', 
-                        asset_id: event.asset_id, 
-                        event: event,
-                        error: err?.message
-                    });
-                    continue;
-                }
+                // Handle price updates per asset
+                const assetIds: string[] = event.price_changes.map(price_change_item => price_change_item.asset_id);
 
-                if (!spreadOver10Cents) {
-                    let newPrice: string;
+                for (const assetId of assetIds) {
+                    let spreadOver10Cents: boolean;
                     try {
-                        newPrice = this.bookCache.midpoint(event.asset_id);
+                        spreadOver10Cents = this.bookCache.spreadOver(assetId, 0.1);
                     } catch (err: any) {
                         logger.debug({ 
-                            message: 'Skipping derived future price calculation for price_change: error calculating midpoint', 
-                            asset_id: event.asset_id, 
+                            message: 'Skipping derived future price calculation for price_change: error calculating spread', 
+                            asset_id: assetId, 
                             event: event,
                             error: err?.message
                         });
                         continue;
                     }
 
-                    const bookEntry: BookEntry | null = this.bookCache.getBookEntry(event.asset_id);
-                    if (!bookEntry) {
-                        logger.debug({ 
-                            message: 'Skipping derived future price calculation price_change: book not found for asset', 
-                            asset_id: event.asset_id, 
-                            event: event,
-                        });
-                        continue;
-                    }
+                    if (!spreadOver10Cents) {
+                        let newPrice: string;
+                        try {
+                            newPrice = this.bookCache.midpoint(assetId);
+                        } catch (err: any) {
+                            logger.debug({ 
+                                message: 'Skipping derived future price calculation for price_change: error calculating midpoint', 
+                                asset_id: assetId, 
+                                event: event,
+                                error: err?.message
+                            });
+                            continue;
+                        }
 
-                    if (newPrice !== bookEntry.price) {
-                        bookEntry.price = newPrice;
-                        const priceUpdateEvent: PolymarketPriceUpdateEvent = {
-                            asset_id: event.asset_id,
-                            event_type: 'price_update',
-                            triggeringEvent: event,
-                            timestamp: event.timestamp,
-                            book: { bids: bookEntry.bids, asks: bookEntry.asks },
-                            price: newPrice,
-                            midpoint: bookEntry.midpoint || '',
-                            spread: bookEntry.spread || '',
-                        };
-                        await this.handlers.onPolymarketPriceUpdate?.([priceUpdateEvent]);
+                        const bookEntry: BookEntry | null = this.bookCache.getBookEntry(assetId);
+                        if (!bookEntry) {
+                            logger.debug({ 
+                                message: 'Skipping derived future price calculation price_change: book not found for asset', 
+                                asset_id: assetId, 
+                                event: event,
+                            });
+                            continue;
+                        }
+
+                        if (newPrice !== bookEntry.price) {
+                            bookEntry.price = newPrice;
+                            const priceUpdateEvent: PolymarketPriceUpdateEvent = {
+                                asset_id: assetId,
+                                event_type: 'price_update',
+                                triggeringEvent: event,
+                                timestamp: event.timestamp,
+                                book: { bids: bookEntry.bids, asks: bookEntry.asks },
+                                price: newPrice,
+                                midpoint: bookEntry.midpoint || '',
+                                spread: bookEntry.spread || '',
+                            };
+                            await this.handlers.onPolymarketPriceUpdate?.([priceUpdateEvent]);
+                        }
                     }
                 }
             }

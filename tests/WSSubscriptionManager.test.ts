@@ -51,12 +51,18 @@ describe('WSSubscriptionManager', () => {
     });
 
     const createMockPriceChangeEvent = (assetId: string): PriceChangeEvent => ({
-        asset_id: assetId,
         market: 'test-market',
         timestamp: '1234567890',
-        hash: 'test-hash',
         event_type: 'price_change',
-        changes: [{ price: '0.50', side: 'buy', size: '100' }]
+        price_changes: [{
+            asset_id: assetId,
+            price: '0.50', 
+            side: 'BUY', 
+            size: '100',
+            hash: 'test-hash',
+            best_bid: '0.45',
+            best_ask: '0.55'
+        }]
     });
 
     beforeEach(() => {

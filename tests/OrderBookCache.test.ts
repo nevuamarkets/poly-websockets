@@ -105,13 +105,19 @@ describe('OrderBookCache', () => {
         bookCache.replaceBook(bookEvt);
 
         const priceChange: PriceChangeEvent = {
-            asset_id: ASSET_ID,
             market: 'm',
-            hash: 'x',
             timestamp: '1',
             event_type: 'price_change',
-            changes: [
-                { price: '0.90', side: 'BUY', size: '3' }
+            price_changes: [
+                { 
+                    asset_id: ASSET_ID,
+                    price: '0.90', 
+                    side: 'BUY', 
+                    size: '3',
+                    hash: 'x',
+                    best_bid: '0.90',
+                    best_ask: '0.98'
+                }
             ]
         };
 

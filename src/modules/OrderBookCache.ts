@@ -72,13 +72,14 @@ export class OrderBookCache {
      * Throws if the book is not found.
      */
     public upsertPriceChange(event: PriceChangeEvent): void {
-        const book = this.bookCache[event.asset_id];
-        if (!book) {
-            throw new Error(`Book not found for asset ${event.asset_id}`);
-        }
+        // Iterate through price_changes array
+        for (const priceChange of event.price_changes) {
+            const book = this.bookCache[priceChange.asset_id];
+            if (!book) {
+                throw new Error(`Book not found for asset ${priceChange.asset_id}`);
+            }
 
-        for (const change of event.changes) {
-            const { price, size, side } = change;
+            const { price, size, side } = priceChange;
             if (side === 'BUY') {
                 const i = book.bids.findIndex(bid => bid.price === price);
                 if (i !== -1) {

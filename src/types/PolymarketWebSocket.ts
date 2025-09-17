@@ -9,26 +9,44 @@ export type PriceLevel = {
 };
 
 /**
+ * Represents a single price change item
+ */
+export type PriceChangeItem = {
+    asset_id: string;
+    price: string;
+    size: string;
+    side: 'BUY' | 'SELL';
+    hash: string;
+    best_bid: string;
+    best_ask: string;
+};
+
+/**
  * Represents a price_change event from Polymarket WebSocket
- * @example
+ * 
+ * Schema example:
  * {
- *   asset_id: "39327269875426915204597944387916069897800289788920336317845465327697809453999",
- *   changes: [
- *     { price: "0.044", side: "SELL", size: "611" }
+ *   market: "0x5f65177b394277fd294cd75650044e32ba009a95022d88a0c1d565897d72f8f1",
+ *   price_changes: [
+ *     {
+ *       asset_id: "71321045679252212594626385532706912750332728571942532289631379312455583992563",
+ *       price: "0.5",
+ *       size: "200",
+ *       side: "BUY",
+ *       hash: "56621a121a47ed9333273e21c83b660cff37ae50",
+ *       best_bid: "0.5",
+ *       best_ask: "1"
+ *     }
  *   ],
- *   event_type: "price_change",
- *   hash: "a0b7cadf869fc288dbbf65704996fe818cc97d6a",
- *   market: "0x5412ae25e97078f814157de948459d59c6221b4c4c495fdd57b536543ad36729",
- *   timestamp: "1749371014925"
+ *   timestamp: "1757908892351",
+ *   event_type: "price_change"
  * }
  */
 export type PriceChangeEvent = {
-    asset_id: string;
-    changes: { price: string; side: string; size: string }[];
     event_type: 'price_change';
-    hash: string;
     market: string;
     timestamp: string;
+    price_changes: PriceChangeItem[];
 };
 
 /**
@@ -151,14 +169,20 @@ export type TickSizeChangeEvent = {
  * 
  * @example PriceChangeEvent
  * {
- *   asset_id: "39327269875426915204597944387916069897800289788920336317845465327697809453999",
- *   changes: [
- *     { price: "0.044", side: "SELL", size: "611" }
+ *   market: "0x5f65177b394277fd294cd75650044e32ba009a95022d88a0c1d565897d72f8f1",
+ *   price_changes: [
+ *     {
+ *       asset_id: "71321045679252212594626385532706912750332728571942532289631379312455583992563",
+ *       price: "0.5",
+ *       size: "200",
+ *       side: "BUY",
+ *       hash: "56621a121a47ed9333273e21c83b660cff37ae50",
+ *       best_bid: "0.5",
+ *       best_ask: "1"
+ *     }
  *   ],
- *   event_type: "price_change",
- *   hash: "a0b7cadf869fc288dbbf65704996fe818cc97d6a",
- *   market: "0x5412ae25e97078f814157de948459d59c6221b4c4c495fdd57b536543ad36729",
- *   timestamp: "1749371014925"
+ *   timestamp: "1757908892351",
+ *   event_type: "price_change"
  * }
  * 
  * @example TickSizeChangeEvent
@@ -239,7 +263,7 @@ export type WebSocketHandlers = {
  *   console.log(event.bids);
  * }
  */
-export function isBookEvent(event: PolymarketWSEvent): event is BookEvent {
+export function isBookEvent(event: PolymarketWSEvent | PolymarketPriceUpdateEvent): event is BookEvent {
     return event?.event_type === 'book';
 }
 
@@ -251,7 +275,7 @@ export function isBookEvent(event: PolymarketWSEvent): event is BookEvent {
  *   console.log(event.side);
  * }
  */
-export function isLastTradePriceEvent(event: PolymarketWSEvent): event is LastTradePriceEvent {
+export function isLastTradePriceEvent(event: PolymarketWSEvent | PolymarketPriceUpdateEvent): event is LastTradePriceEvent {
     return event?.event_type === 'last_trade_price';
 }
 
@@ -263,7 +287,7 @@ export function isLastTradePriceEvent(event: PolymarketWSEvent): event is LastTr
  *   console.log(event.changes);
  * }
  */
-export function isPriceChangeEvent(event: PolymarketWSEvent): event is PriceChangeEvent {
+export function isPriceChangeEvent(event: PolymarketWSEvent | PolymarketPriceUpdateEvent): event is PriceChangeEvent {
     return event?.event_type === 'price_change';
 }
 
@@ -275,6 +299,6 @@ export function isPriceChangeEvent(event: PolymarketWSEvent): event is PriceChan
  *   console.log(event.old_tick_size);
  * }
  */
-export function isTickSizeChangeEvent(event: PolymarketWSEvent): event is TickSizeChangeEvent {
+export function isTickSizeChangeEvent(event: PolymarketWSEvent | PolymarketPriceUpdateEvent): event is TickSizeChangeEvent {
     return event?.event_type === 'tick_size_change';
 }

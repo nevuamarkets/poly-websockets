@@ -25,7 +25,16 @@ const handlers: WebSocketHandlers = {
 
   onPriceChange: async (events: PriceChangeEvent[]) => {
     for (const event of events) {
-      //console.log('price_change event', event)
+      console.log('price_change event:');
+      console.log('  Market:', event.market);
+      console.log('  Timestamp:', event.timestamp);
+      console.log('  Price changes:');
+      for (const change of event.price_changes) {
+        console.log(`    Asset ${change.asset_id}:`);
+        console.log(`      ${change.side} ${change.size} @ ${change.price}`);
+        console.log(`      Best bid: ${change.best_bid}, Best ask: ${change.best_ask}`);
+        console.log(`      Hash: ${change.hash}`);
+      }
     }
   },
 
