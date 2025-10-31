@@ -122,6 +122,34 @@ describe('WebSocket Error Handling on Open', () => {
             // onWSOpen should be called
             expect(mockHandlers.onWSOpen).toHaveBeenCalledWith('test-group', ['asset1', 'asset2']);
         });
+
+        it('should ignore PONG keepalive messages without triggering onError', async () => {
+            const group: WebSocketGroup = {
+                groupId: 'test-group',
+                assetIds: new Set(['asset1']),
+                wsClient: null,
+                status: WebSocketStatus.PENDING
+            };
+
+            const groupSocket = new GroupSocket(group, mockLimiter, mockBookCache, mockHandlers);
+
+            const mockWS = {
+                on: vi.fn(),
+                removeAllListeners: vi.fn(),
+                send: vi.fn()
+            } as any;
+
+            MockedWebSocket.mockReturnValue(mockWS);
+
+            await groupSocket.connect();
+
+            const messageHandler = mockWS.on.mock.calls.find(call => call[0] === 'message')?.[1];
+            expect(messageHandler).toBeDefined();
+
+            await messageHandler(Buffer.from('PONG'));
+
+            expect(mockHandlers.onError).not.toHaveBeenCalled();
+        });
     });
 
     describe('UserGroupSocket', () => {
@@ -225,6 +253,40 @@ describe('WebSocket Error Handling on Open', () => {
             
             // onWSOpen should be called
             expect(mockUserHandlers.onWSOpen).toHaveBeenCalledWith('test-user-group', ['market1', 'market2']);
+        });
+
+        it('should ignore PONG keepalive messages without triggering onError', async () => {
+            const group: UserWebSocketGroup = {
+                groupId: 'test-user-group',
+                marketIds: new Set(['market1']),
+                wsClient: null,
+                status: WebSocketStatus.PENDING,
+                subscribeToAll: false,
+                auth: {
+                    apiKey: 'key',
+                    secret: 'secret',
+                    passphrase: 'pass'
+                }
+            };
+
+            const userGroupSocket = new UserGroupSocket(group, mockLimiter, mockUserHandlers);
+
+            const mockWS = {
+                on: vi.fn(),
+                removeAllListeners: vi.fn(),
+                send: vi.fn()
+            } as any;
+
+            MockedWebSocket.mockReturnValue(mockWS);
+
+            await userGroupSocket.connect();
+
+            const messageHandler = mockWS.on.mock.calls.find(call => call[0] === 'message')?.[1];
+            expect(messageHandler).toBeDefined();
+
+            await messageHandler(Buffer.from('PONG'));
+
+            expect(mockUserHandlers.onError).not.toHaveBeenCalled();
         });
     });
 });

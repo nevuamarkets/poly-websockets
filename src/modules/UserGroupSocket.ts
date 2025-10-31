@@ -122,12 +122,18 @@ export class UserGroupSocket {
         };
 
         const handleMessage = async (data: Buffer) => {
+            const rawMessage = data.toString();
+            const normalizedMessage = rawMessage.trim().toUpperCase();
+            if (normalizedMessage === 'PONG') {
+                return;
+            }
+
             let events: PolymarketUserWSEvent[] = [];
             try {
-                const parsedData: any = JSON.parse(data.toString());
+                const parsedData: any = JSON.parse(rawMessage);
                 events = Array.isArray(parsedData) ? parsedData : [parsedData];
             } catch (err) {
-                await handlers.onError?.(new Error(`Not JSON: ${data.toString()}`));
+                await handlers.onError?.(new Error(`Not JSON: ${rawMessage}`));
                 return;
             }
 
