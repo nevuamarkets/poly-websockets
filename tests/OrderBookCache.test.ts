@@ -55,6 +55,10 @@ describe('OrderBookCache', () => {
         expect(entity!.asks[1].size).toBe('1');
     });
 
+    it('should return null if it doesn\'t find the book entry', () => {
+        expect(bookCache.getBookEntry(ASSET_ID)).toBe(null);
+    });
+
     it('replaceBook should populate cache & keep ascending order for bids & descending order for asks', () => {
         const bookEvt: BookEvent = {
             asset_id: ASSET_ID,
