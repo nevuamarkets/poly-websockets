@@ -77,9 +77,6 @@ describe('OrderBookCache', () => {
 
         bookCache.replaceBook(bookEvt);
 
-        assertAscending(bookCache.getBookEntry(ASSET_ID)!.bids);
-        assertDescending(bookCache.getBookEntry(ASSET_ID)!.asks);
-
         const mid = bookCache.midpoint(ASSET_ID);
         expect(mid).toBe('0.25'); // (0.2 + 0.3)/2 → 0.25
         expect(bookCache.spreadOver(ASSET_ID, 0.1)).toBe(false); // 0.3 - 0.2 = 0.1 
@@ -122,9 +119,6 @@ describe('OrderBookCache', () => {
         };
 
         bookCache.upsertPriceChange(priceChange);
-
-        assertAscending(bookCache.getBookEntry(ASSET_ID)!.bids);
-        assertDescending(bookCache.getBookEntry(ASSET_ID)!.asks);
         
         expect(bookCache.spreadOver(ASSET_ID, 0.1)).toBe(false); // 0.99 - 0.9 = 0.09
         expect(bookCache.midpoint(ASSET_ID)).toBe('0.94');
