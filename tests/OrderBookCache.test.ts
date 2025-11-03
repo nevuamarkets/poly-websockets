@@ -59,6 +59,28 @@ describe('OrderBookCache', () => {
         expect(bookCache.getBookEntry(ASSET_ID)).toBe(null);
     });
 
+    it('should remove book cache entity', () => {
+        const bookEvt: BookEvent = {
+            asset_id: ASSET_ID,
+            market: 'm',
+            timestamp: '0',
+            hash: 'h',
+            event_type: 'book',
+            bids: [
+                { price: '0.01', size: '10' },
+                { price: '0.02', size: '5' }
+            ],
+            asks: [
+                { price: '0.99', size: '2' },
+                { price: '0.98', size: '1' }   
+            ]
+        };
+
+        bookCache.replaceBook(bookEvt);
+        bookCache.clear();
+        expect(bookCache.getBookEntry(ASSET_ID)).toBe(null);
+    })
+
     it('replaceBook should populate cache & keep ascending order for bids & descending order for asks', () => {
         const bookEvt: BookEvent = {
             asset_id: ASSET_ID,
