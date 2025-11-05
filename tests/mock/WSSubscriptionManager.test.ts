@@ -290,7 +290,7 @@ describe('WSSubscriptionManager', () => {
 
                 // Only asset1 and asset3 are subscribed
                 mockGroupRegistry.getGroupIndicesForAsset
-                    .mockImplementation((assetId) => {
+                    .mockImplementation((assetId:String) => {
                         if (assetId === 'asset1' || assetId === 'asset3') return [0];
                         return [];
                     });
