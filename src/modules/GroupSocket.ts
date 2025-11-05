@@ -137,75 +137,83 @@ export class GroupSocket {
         };
 
         const handleMessage = async (data: Buffer) => {
-            const messageStr = data.toString();
-
-            // Handle PONG messages that might be sent to message handler during handler reattachment
-            if (messageStr === 'PONG') {
-                return;
-            }
-
-            let events: PolymarketWSEvent[] = [];
             try {
-                const parsedData: any = JSON.parse(messageStr);
-                events = Array.isArray(parsedData) ? parsedData : [parsedData];
-            } catch (err) {
-                await handlers.onError?.(new Error(`Not JSON: ${messageStr}`));
-                return;
-            }
+                const messageStr = data.toString();
 
-            // Filter events to ensure validity
-            events = _.filter(events, (event: PolymarketWSEvent) => {
-                // For price_change events, check that price_changes array exists
-                if (isPriceChangeEvent(event)) {
-                    return event.price_changes && event.price_changes.length > 0;
+                // Handle PONG messages that might be sent to message handler during handler reattachment
+                if (messageStr === 'PONG') {
+                    return;
                 }
-                // For all other events, check asset_id
-                return _.size(event.asset_id) > 0;
-            });
 
-            const bookEvents: BookEvent[] = [];
-            const lastTradeEvents: LastTradePriceEvent[] = [];
-            const tickEvents: TickSizeChangeEvent[] = [];
-            const priceChangeEvents: PriceChangeEvent[] = [];
+                let events: PolymarketWSEvent[] = [];
+                try {
+                    const parsedData: any = JSON.parse(messageStr);
+                    events = Array.isArray(parsedData) ? parsedData : [parsedData];
+                } catch (err) {
+                    await handlers.onError?.(new Error(`Not JSON: ${messageStr}`));
+                    return;
+                }
 
-            for (const event of events) {
-                /* 
-                    Skip events for asset ids that are not in the group to ensure that
-                    we don't get stale events for assets that were removed.
-                */
-                if (isPriceChangeEvent(event)) {
-                    // Check if any of the price_changes are for assets in this group
-                    const relevantChanges = event.price_changes.filter(price_change_item => group.assetIds.has(price_change_item.asset_id));
-                    if (relevantChanges.length === 0) {
-                        continue;
+                // Filter events to ensure validity
+                events = _.filter(events, (event: PolymarketWSEvent) => {
+                    if (!event) {
+                        return false;
                     }
-                    // Only include relevant changes
-                    priceChangeEvents.push({
-                        ...event,
-                        price_changes: relevantChanges
-                    });
-                } else {
-                    // For all other events, check asset_id at root
-                    if (!group.assetIds.has(event.asset_id!)) {
-                        continue;
+                    // For price_change events, check that price_changes array exists
+                    if (isPriceChangeEvent(event)) {
+                        return event.price_changes && event.price_changes.length > 0;
                     }
+                    // For all other events, check asset_id
+                    return _.size(event.asset_id) > 0;
+                });
 
-                    if (isBookEvent(event)) {
-                        bookEvents.push(event);
-                    } else if (isLastTradePriceEvent(event)) {
-                        lastTradeEvents.push(event);
-                    } else if (isTickSizeChangeEvent(event)) {
-                        tickEvents.push(event);
+                const bookEvents: BookEvent[] = [];
+                const lastTradeEvents: LastTradePriceEvent[] = [];
+                const tickEvents: TickSizeChangeEvent[] = [];
+                const priceChangeEvents: PriceChangeEvent[] = [];
+
+                for (const event of events) {
+                    /* 
+                        Skip events for asset ids that are not in the group to ensure that
+                        we don't get stale events for assets that were removed.
+                    */
+                    if (isPriceChangeEvent(event)) {
+                        // Check if any of the price_changes are for assets in this group
+                        const relevantChanges = event.price_changes.filter(price_change_item => group.assetIds.has(price_change_item.asset_id));
+                        if (relevantChanges.length === 0) {
+                            continue;
+                        }
+                        // Only include relevant changes
+                        priceChangeEvents.push({
+                            ...event,
+                            price_changes: relevantChanges
+                        });
                     } else {
-                        await handlers.onError?.(new Error(`Unknown event: ${JSON.stringify(event)}`));
+                        // For all other events, check asset_id at root
+                        if (!group.assetIds.has(event.asset_id!)) {
+                            continue;
+                        }
+
+                        if (isBookEvent(event)) {
+                            bookEvents.push(event);
+                        } else if (isLastTradePriceEvent(event)) {
+                            lastTradeEvents.push(event);
+                        } else if (isTickSizeChangeEvent(event)) {
+                            tickEvents.push(event);
+                        } else {
+                            await handlers.onError?.(new Error(`Unknown event: ${JSON.stringify(event)}`));
+                        }
                     }
                 }
-            }
 
-            await this.handleBookEvents(bookEvents);
-            await this.handleTickEvents(tickEvents);
-            await this.handlePriceChangeEvents(priceChangeEvents);
-            await this.handleLastTradeEvents(lastTradeEvents);
+                await this.handleBookEvents(bookEvents);
+                await this.handleTickEvents(tickEvents);
+                await this.handlePriceChangeEvents(priceChangeEvents);
+                await this.handleLastTradeEvents(lastTradeEvents);
+            } catch (err) {
+                // handler-wide error handling
+                await handlers.onError?.(new Error(`Error handling message: ${err}`));
+            }
         };
 
         const handlePong = () => {
