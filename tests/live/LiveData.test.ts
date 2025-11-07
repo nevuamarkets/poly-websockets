@@ -83,16 +83,35 @@ async function createConnectionWithType(tokenIdsArray:string[], type: string): P
 
 describe("onBook", () => {
     let tokenIdsArray;
-    let book: any;
+    let books: any;
 
     beforeEach(async () => {
         tokenIdsArray = await getTopMarketsByVolume(marketsQty)
-        book = await createConnectionWithType(tokenIdsArray, "onBook")
+        books = await createConnectionWithType(tokenIdsArray, "onBook")
     });
 
     it('should receive the orderbook', async() => {
-        expect(book).toBeDefined()
-        console.log(book)
+        expect(books).toBeDefined()
+        console.log(books)
     }, 5000)
 
+    it('should have all fileds', () => {
+        console.log(books)
+        books.forEach((book:BookEvent) => {
+            expect(book.market).toBeTypeOf('string')
+            expect(book.asset_id).toBeTypeOf('string')
+            expect(book.timestamp).toBeTypeOf('string')
+            expect(book.hash).toBeTypeOf('string')
+            expect(Array.isArray(book.bids)).toBe(true)
+            expect(Array.isArray(book.asks)).toBe(true)
+            expect(book.event_type).toBe('book')
+        });
+    });
+
+    it('should have only specified fields', () => {
+    books.forEach((book: BookEvent) => {
+        const expectedKeys = ['market', 'asset_id', 'timestamp', 'hash', 'bids', 'asks', 'event_type', 'last_trade_price'];
+        expect(Object.keys(book).sort()).toEqual(expectedKeys.sort());
+        });
+    });
 })
