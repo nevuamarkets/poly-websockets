@@ -2,13 +2,15 @@
 import { beforeEach, describe, it, expect } from "vitest";
 import { WSSubscriptionManager } from '../../src/WSSubscriptionManager'
 import { BookEvent, LastTradePriceEvent, PriceChangeEvent, TickSizeChangeEvent, WebSocketHandlers } from '../../src/types/PolymarketWebSocket'
-import { WebSocketStatus } from "../../src/types/WebSocketSubscriptions";
 
 const marketsQty = '5';
-const bookEndpoint = 'https://clob.polymarket.com/book?token_id='
 const marketsUrl = 'https://gamma-api.polymarket.com/markets'
 
-
+/**
+ * Returns the top X markets by volume
+ * @param {number} quantity The number of markets to return
+ * @returns {Array<string>} The tokenIds of the marktes
+ */
 async function getTopMarketsByVolume(quantity:string): Promise<string[]> {
     let tokenIdsArray:string[];   
     tokenIdsArray = [];
@@ -24,9 +26,16 @@ async function getTopMarketsByVolume(quantity:string): Promise<string[]> {
 
     return tokenIdsArray;
 }
+
 /**
  * Creates a connection and returns the first value that it receives,
  * except onOpen event that returns true once the connection is established
+ * @param {string[]} tokenIdsArray an array of markets tokenIds
+ * @param {string} type the type of handlers (onOpen, onBook, ...)
+ * @returns {Promise<BookEvent[]|LastTradePriceEvent[]|TickSizeChangeEvent[]|PriceChangeEvent[]|boolean|undefined>} 
+ * Boolean for onOpen,
+ * Undefined if it fails,
+ * Events for the rest
  */
 async function createConnectionWithType(tokenIdsArray:string[], type: string): Promise<BookEvent[]|LastTradePriceEvent[]|TickSizeChangeEvent[]|PriceChangeEvent[]|boolean|undefined> {
     tokenIdsArray = await getTopMarketsByVolume(marketsQty);
@@ -72,17 +81,18 @@ async function createConnectionWithType(tokenIdsArray:string[], type: string): P
 
 }
 
-describe("subscription check", () => {
+describe("onBook", () => {
+    let tokenIdsArray;
+    let book: any;
 
     beforeEach(async () => {
-
+        tokenIdsArray = await getTopMarketsByVolume(marketsQty)
+        book = await createConnectionWithType(tokenIdsArray, "onBook")
     });
 
-    it('should have the book', async() => {
-        const tokenIdsArray = await getTopMarketsByVolume(marketsQty)
-        console.log(tokenIdsArray)
-        const result = await createConnectionWithType(tokenIdsArray, "onBook")
-        console.log(result)
+    it('should receive the orderbook', async() => {
+        expect(book).toBeDefined()
+        console.log(book)
     }, 5000)
 
 })
