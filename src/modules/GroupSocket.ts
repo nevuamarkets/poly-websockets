@@ -139,9 +139,10 @@ export class GroupSocket {
         const handleMessage = async (data: Buffer) => {
             try {
                 const messageStr = data.toString();
+                const normalizedMessageStr = messageStr.trim().toUpperCase();
 
                 // Handle PONG messages that might be sent to message handler during handler reattachment
-                if (messageStr === 'PONG') {
+                if (normalizedMessageStr === 'PONG') {
                     return;
                 }
 
