@@ -3,7 +3,7 @@ import { beforeEach, describe, it, expect } from "vitest";
 import { WSSubscriptionManager } from '../../src/WSSubscriptionManager'
 import { BookEvent, LastTradePriceEvent, PriceChangeEvent, TickSizeChangeEvent, WebSocketHandlers } from '../../src/types/PolymarketWebSocket'
 
-const marketsQty = '5';
+const marketsQty = '50';
 const marketsUrl = 'https://gamma-api.polymarket.com/markets'
 
 /**
@@ -42,7 +42,6 @@ Promise<{
     data: Promise<BookEvent[] | LastTradePriceEvent[] | TickSizeChangeEvent[] | PriceChangeEvent[] | boolean | undefined>,
     stream: WSSubscriptionManager | undefined} | undefined>
 {
-    tokenIdsArray = await getTopMarketsByVolume(marketsQty);
     let stream: WSSubscriptionManager | undefined;
     try{
         const data = new Promise<BookEvent[]|LastTradePriceEvent[]|TickSizeChangeEvent[]|PriceChangeEvent[]|boolean>((resolve) => {
@@ -119,13 +118,69 @@ describe("onBook", () => {
     });
 
     it('should have only specified fields', () => {
-    books.forEach((book: BookEvent) => {
-        const expectedKeys = ['market', 'asset_id', 'timestamp', 'hash', 'bids', 'asks', 'event_type', 'last_trade_price'];
-        expect(Object.keys(book).sort()).toEqual(expectedKeys.sort());
+        books.forEach((book: BookEvent) => {
+            const expectedKeys = ['market', 'asset_id', 'timestamp', 'hash', 'bids', 'asks', 'event_type', 'last_trade_price'];
+            expect(Object.keys(book).sort()).toEqual(expectedKeys.sort());
         });
     });
 })
 
+// Might time out with low markets quantity
 describe("onLastTradePrice", () => {
+    let tokenIdsArray;
+    let lastTradePrice: any;
+    let stream: WSSubscriptionManager | undefined;
+
+    beforeEach(async () => {
+        tokenIdsArray = await getTopMarketsByVolume(marketsQty)
+        const result = await createConnectionWithType(tokenIdsArray, "onLastTradePrice");
+        if (result) {
+            lastTradePrice = await result.data;
+            stream = result.stream;
+            console.log(result.data)
+        }
+        stream?.clearState()
+    }, 30000);
+
+    it('should receive last trade price object', async() => {
+        expect(lastTradePrice).toBeDefined()
+    }, 5000)
+
+    it('should have all expected fileds', () => {
+        lastTradePrice.forEach((ltp:LastTradePriceEvent) => {
+            expect(ltp.asset_id).toBeTypeOf('string')
+            expect(ltp.event_type).toBe('last_trade_price')
+            expect(ltp.fee_rate_bps).toBeTypeOf('string')
+            expect(ltp.market).toBeTypeOf('string')
+            expect(ltp.price).toBeTypeOf('string')
+            expect(ltp.side).toBeTypeOf('string')
+            expect(ltp.size).toBeTypeOf('string')
+            expect(ltp.timestamp).toBeTypeOf('string')
+        });
+    });
+
+    it('should have only specified fields', () => {
+        lastTradePrice.forEach((ltp: BookEvent) => {
+            const expectedKeys = ['market', 'asset_id', 'timestamp', 'fee_rate_bps', 'price', 'side', 'event_type', 'size', 'transaction_hash'];
+            expect(Object.keys(ltp).sort()).toEqual(expectedKeys.sort());
+        });
+    });
+})
+
+describe("onPriceChange", () => {
+    let tokenIdsArray;
+    let lastTradePrice: any;
+    let stream: WSSubscriptionManager | undefined;
+
+    beforeEach(async () => {
+        tokenIdsArray = await getTopMarketsByVolume(marketsQty)
+        const result = await createConnectionWithType(tokenIdsArray, "onLastTradePrice");
+        if (result) {
+            lastTradePrice = await result.data;
+            stream = result.stream;
+            console.log(result)
+        }
+        stream?.clearState()
+    }, 30000);
 
 })
