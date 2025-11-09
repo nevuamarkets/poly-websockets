@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import { beforeEach, describe, it, expect } from "vitest";
 import { WSSubscriptionManager } from '../../src/WSSubscriptionManager'
-import { BookEvent, LastTradePriceEvent, PriceChangeEvent, TickSizeChangeEvent, WebSocketHandlers } from '../../src/types/PolymarketWebSocket'
+import { BookEvent, LastTradePriceEvent, PriceChangeEvent, PriceChangeItem, TickSizeChangeEvent, WebSocketHandlers } from '../../src/types/PolymarketWebSocket'
 
 const marketsQty = '50';
 const marketsUrl = 'https://gamma-api.polymarket.com/markets'
@@ -137,12 +137,11 @@ describe("onLastTradePrice", () => {
         if (result) {
             lastTradePrice = await result.data;
             stream = result.stream;
-            console.log(result.data)
         }
         stream?.clearState()
     });
 
-    it('should receive last trade price object', async() => {
+    it('should receive last trade price event', async() => {
         expect(lastTradePrice).toBeDefined()
     })
 
@@ -169,20 +168,41 @@ describe("onLastTradePrice", () => {
 
 describe("onPriceChange", () => {
     let tokenIdsArray;
-    let lastTradePrice: any;
+    let priceChange: any;
     let stream: WSSubscriptionManager | undefined;
 
     beforeEach(async () => {
         tokenIdsArray = await getTopMarketsByVolume(marketsQty)
         const result = await createConnectionWithType(tokenIdsArray, "onPriceChange");
         if (result) {
-            lastTradePrice = await result.data;
+            priceChange = await result.data;
             stream = result.stream;
-            console.log(result)
         }
         stream?.clearState()
     });
 
+    it('should receive onPriceChange event', async() => {
+        expect(priceChange).toBeDefined()
+    })
+    
+    it('should have all expected fileds', () => {
+        priceChange.forEach((pc:PriceChangeEvent) => {
+            expect(pc.market).toBeTypeOf('string')
+            expect(pc.timestamp).toBeTypeOf('string')
+            expect(pc.event_type).toBe('price_change')
+            expect(Array.isArray(pc.price_changes)).toBe(true)
+        });
+    });
 
-
+    it('should have all expected fileds in price_changes array', () => {
+        priceChange[0].price_changes.forEach((pc:PriceChangeItem) => {
+            expect(pc.asset_id).toBeTypeOf('string')
+            expect(pc.price).toBeTypeOf('string')
+            expect(pc.size).toBeTypeOf('string')
+            expect(pc.side).toBeTypeOf('string')
+            expect(pc.hash).toBeTypeOf('string')
+            expect(pc.best_bid).toBeTypeOf('string')
+            expect(pc.best_ask).toBeTypeOf('string')
+        });
+    });
 })
