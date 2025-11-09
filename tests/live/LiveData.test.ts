@@ -99,11 +99,11 @@ describe("onBook", () => {
             stream = result.stream;
         }
         stream?.clearState()
-    }, 20000);
+    });
 
     it('should receive the orderbook', async() => {
         expect(books).toBeDefined()
-    }, 5000)
+    })
 
     it('should have all fileds', () => {
         books.forEach((book:BookEvent) => {
@@ -140,11 +140,11 @@ describe("onLastTradePrice", () => {
             console.log(result.data)
         }
         stream?.clearState()
-    }, 30000);
+    });
 
     it('should receive last trade price object', async() => {
         expect(lastTradePrice).toBeDefined()
-    }, 5000)
+    })
 
     it('should have all expected fileds', () => {
         lastTradePrice.forEach((ltp:LastTradePriceEvent) => {
@@ -174,13 +174,15 @@ describe("onPriceChange", () => {
 
     beforeEach(async () => {
         tokenIdsArray = await getTopMarketsByVolume(marketsQty)
-        const result = await createConnectionWithType(tokenIdsArray, "onLastTradePrice");
+        const result = await createConnectionWithType(tokenIdsArray, "onPriceChange");
         if (result) {
             lastTradePrice = await result.data;
             stream = result.stream;
             console.log(result)
         }
         stream?.clearState()
-    }, 30000);
+    });
+
+
 
 })
