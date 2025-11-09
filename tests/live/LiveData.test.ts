@@ -82,8 +82,6 @@ Promise<{
         console.log('Error while creating connection: ', e);
         return undefined;
     }
-
-
 }
 
 describe('onBook', () => {
@@ -99,7 +97,7 @@ describe('onBook', () => {
             stream = result.stream;
         }
         stream?.clearState();
-    });
+    }, 30000);
 
     it('should receive the orderbook', async() => {
         expect(books).toBeDefined();
@@ -139,13 +137,13 @@ describe('onLastTradePrice', () => {
             stream = result.stream;
         }
         stream?.clearState();
-    });
+    }, 30000);
 
     it('should receive last trade price event', async() => {
         expect(lastTradePrice).toBeDefined();
     })
 
-    it('should have all expected fileds', () => {
+    it('should have all expected fields', () => {
         lastTradePrice.forEach((ltp:LastTradePriceEvent) => {
             expect(ltp.asset_id).toBeTypeOf('string');
             expect(ltp.event_type).toBe('last_trade_price');
@@ -179,7 +177,7 @@ describe('onPriceChange', () => {
             stream = result.stream;
         }
         stream?.clearState()
-    });
+    }, 30000);
 
     it('should receive onPriceChange event', async() => {
         expect(priceChange).toBeDefined();
