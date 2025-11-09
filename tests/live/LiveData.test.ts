@@ -1,5 +1,5 @@
-/// <reference types="vitest" />
-import { beforeEach, describe, it, expect } from "vitest";
+/// <reference types='vitest' />
+import { beforeEach, describe, it, expect } from 'vitest';
 import { WSSubscriptionManager } from '../../src/WSSubscriptionManager'
 import { BookEvent, LastTradePriceEvent, PriceChangeEvent, PriceChangeItem, TickSizeChangeEvent, WebSocketHandlers } from '../../src/types/PolymarketWebSocket'
 
@@ -47,27 +47,27 @@ Promise<{
         const data = new Promise<BookEvent[]|LastTradePriceEvent[]|TickSizeChangeEvent[]|PriceChangeEvent[]|boolean>((resolve) => {
             stream = new WSSubscriptionManager({
                 onBook: async (events: BookEvent[]) => {
-                    if (type == "onBook") {
+                    if (type == 'onBook') {
                         resolve(events);
                     }
                 },
                 onLastTradePrice: async (events:LastTradePriceEvent[]) => {
-                    if (type == "onLastTradePrice"){
-                        resolve(events)
+                    if (type == 'onLastTradePrice'){
+                        resolve(events);
                     }
                 },
                 onTickSizeChange: async (events:TickSizeChangeEvent[]) => {
-                    if (type == "onTickSizeChange"){
-                        resolve(events)
+                    if (type == 'onTickSizeChange'){
+                        resolve(events);
                     }
                 },
                 onPriceChange: async (events:PriceChangeEvent[]) => {
-                    if (type == "onPriceChange"){
-                        resolve(events)
+                    if (type == 'onPriceChange'){
+                        resolve(events);
                     }
                 },
                 onWSOpen: async () => {
-                    if (type == "onWSOpen"){
+                    if (type == 'onWSOpen'){
                         resolve(true);
                     }
                 },
@@ -79,41 +79,41 @@ Promise<{
         return {data: data, stream: stream};
 
     }catch(e){
-        console.log("Error while creating connection: ", e)
+        console.log('Error while creating connection: ', e);
         return undefined;
     }
 
 
 }
 
-describe("onBook", () => {
+describe('onBook', () => {
     let tokenIdsArray;
     let books: any;
     let stream: WSSubscriptionManager | undefined;
 
     beforeEach(async () => {
-        tokenIdsArray = await getTopMarketsByVolume(marketsQty)
-        const result = await createConnectionWithType(tokenIdsArray, "onBook");
+        tokenIdsArray = await getTopMarketsByVolume(marketsQty);
+        const result = await createConnectionWithType(tokenIdsArray, 'onBook');
         if (result) {
             books = await result.data;
             stream = result.stream;
         }
-        stream?.clearState()
+        stream?.clearState();
     });
 
     it('should receive the orderbook', async() => {
-        expect(books).toBeDefined()
+        expect(books).toBeDefined();
     })
 
     it('should have all fileds', () => {
         books.forEach((book:BookEvent) => {
-            expect(book.market).toBeTypeOf('string')
-            expect(book.asset_id).toBeTypeOf('string')
-            expect(book.timestamp).toBeTypeOf('string')
-            expect(book.hash).toBeTypeOf('string')
-            expect(Array.isArray(book.bids)).toBe(true)
-            expect(Array.isArray(book.asks)).toBe(true)
-            expect(book.event_type).toBe('book')
+            expect(book.market).toBeTypeOf('string');
+            expect(book.asset_id).toBeTypeOf('string');
+            expect(book.timestamp).toBeTypeOf('string');
+            expect(book.hash).toBeTypeOf('string');
+            expect(Array.isArray(book.bids)).toBe(true);
+            expect(Array.isArray(book.asks)).toBe(true);
+            expect(book.event_type).toBe('book');
         });
     });
 
@@ -126,35 +126,35 @@ describe("onBook", () => {
 })
 
 // Might time out with low markets quantity
-describe("onLastTradePrice", () => {
+describe('onLastTradePrice', () => {
     let tokenIdsArray;
     let lastTradePrice: any;
     let stream: WSSubscriptionManager | undefined;
 
     beforeEach(async () => {
         tokenIdsArray = await getTopMarketsByVolume(marketsQty)
-        const result = await createConnectionWithType(tokenIdsArray, "onLastTradePrice");
+        const result = await createConnectionWithType(tokenIdsArray, 'onLastTradePrice');
         if (result) {
             lastTradePrice = await result.data;
             stream = result.stream;
         }
-        stream?.clearState()
+        stream?.clearState();
     });
 
     it('should receive last trade price event', async() => {
-        expect(lastTradePrice).toBeDefined()
+        expect(lastTradePrice).toBeDefined();
     })
 
     it('should have all expected fileds', () => {
         lastTradePrice.forEach((ltp:LastTradePriceEvent) => {
-            expect(ltp.asset_id).toBeTypeOf('string')
-            expect(ltp.event_type).toBe('last_trade_price')
-            expect(ltp.fee_rate_bps).toBeTypeOf('string')
-            expect(ltp.market).toBeTypeOf('string')
-            expect(ltp.price).toBeTypeOf('string')
-            expect(ltp.side).toBeTypeOf('string')
-            expect(ltp.size).toBeTypeOf('string')
-            expect(ltp.timestamp).toBeTypeOf('string')
+            expect(ltp.asset_id).toBeTypeOf('string');
+            expect(ltp.event_type).toBe('last_trade_price');
+            expect(ltp.fee_rate_bps).toBeTypeOf('string');
+            expect(ltp.market).toBeTypeOf('string');
+            expect(ltp.price).toBeTypeOf('string');
+            expect(ltp.side).toBeTypeOf('string');
+            expect(ltp.size).toBeTypeOf('string');
+            expect(ltp.timestamp).toBeTypeOf('string');
         });
     });
 
@@ -166,14 +166,14 @@ describe("onLastTradePrice", () => {
     });
 })
 
-describe("onPriceChange", () => {
+describe('onPriceChange', () => {
     let tokenIdsArray;
     let priceChange: any;
     let stream: WSSubscriptionManager | undefined;
 
     beforeEach(async () => {
         tokenIdsArray = await getTopMarketsByVolume(marketsQty)
-        const result = await createConnectionWithType(tokenIdsArray, "onPriceChange");
+        const result = await createConnectionWithType(tokenIdsArray, 'onPriceChange');
         if (result) {
             priceChange = await result.data;
             stream = result.stream;
@@ -182,27 +182,27 @@ describe("onPriceChange", () => {
     });
 
     it('should receive onPriceChange event', async() => {
-        expect(priceChange).toBeDefined()
+        expect(priceChange).toBeDefined();
     })
     
     it('should have all expected fileds', () => {
         priceChange.forEach((pc:PriceChangeEvent) => {
-            expect(pc.market).toBeTypeOf('string')
-            expect(pc.timestamp).toBeTypeOf('string')
-            expect(pc.event_type).toBe('price_change')
-            expect(Array.isArray(pc.price_changes)).toBe(true)
+            expect(pc.market).toBeTypeOf('string');
+            expect(pc.timestamp).toBeTypeOf('string');
+            expect(pc.event_type).toBe('price_change');
+            expect(Array.isArray(pc.price_changes)).toBe(true);
         });
     });
 
     it('should have all expected fileds in price_changes array', () => {
         priceChange[0].price_changes.forEach((pc:PriceChangeItem) => {
-            expect(pc.asset_id).toBeTypeOf('string')
-            expect(pc.price).toBeTypeOf('string')
-            expect(pc.size).toBeTypeOf('string')
-            expect(pc.side).toBeTypeOf('string')
-            expect(pc.hash).toBeTypeOf('string')
-            expect(pc.best_bid).toBeTypeOf('string')
-            expect(pc.best_ask).toBeTypeOf('string')
+            expect(pc.asset_id).toBeTypeOf('string');
+            expect(pc.price).toBeTypeOf('string');
+            expect(pc.size).toBeTypeOf('string');
+            expect(pc.side).toBeTypeOf('string');
+            expect(pc.hash).toBeTypeOf('string');
+            expect(pc.best_bid).toBeTypeOf('string');
+            expect(pc.best_ask).toBeTypeOf('string');
         });
     });
 })
