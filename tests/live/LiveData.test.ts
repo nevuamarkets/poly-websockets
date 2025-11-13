@@ -1,5 +1,5 @@
 /// <reference types='vitest' />
-import { beforeEach, describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { WSSubscriptionManager } from '../../src/WSSubscriptionManager'
 import { BookEvent, LastTradePriceEvent, PriceChangeEvent, PriceChangeItem, TickSizeChangeEvent, WebSocketHandlers } from '../../src/types/PolymarketWebSocket'
 
@@ -89,7 +89,7 @@ describe('onBook', () => {
     let books: any;
     let stream: WSSubscriptionManager | undefined;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         tokenIdsArray = await getTopMarketsByVolume(marketsQty);
         const result = await createConnectionWithType(tokenIdsArray, 'onBook');
         if (result) {
@@ -129,7 +129,7 @@ describe('onLastTradePrice', () => {
     let lastTradePrice: any;
     let stream: WSSubscriptionManager | undefined;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         tokenIdsArray = await getTopMarketsByVolume(marketsQty)
         const result = await createConnectionWithType(tokenIdsArray, 'onLastTradePrice');
         if (result) {
@@ -169,7 +169,7 @@ describe('onPriceChange', () => {
     let priceChange: any;
     let stream: WSSubscriptionManager | undefined;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         tokenIdsArray = await getTopMarketsByVolume(marketsQty)
         const result = await createConnectionWithType(tokenIdsArray, 'onPriceChange');
         if (result) {
