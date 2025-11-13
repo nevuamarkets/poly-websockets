@@ -3,7 +3,7 @@ import { beforeEach, describe, it, expect } from 'vitest';
 import { WSSubscriptionManager } from '../../src/WSSubscriptionManager'
 import { BookEvent, LastTradePriceEvent, PriceChangeEvent, PriceChangeItem, TickSizeChangeEvent, WebSocketHandlers } from '../../src/types/PolymarketWebSocket'
 
-const marketsQty = '50';
+const marketsQty = '100';
 const marketsUrl = 'https://gamma-api.polymarket.com/markets'
 
 /**
@@ -97,7 +97,7 @@ describe('onBook', () => {
             stream = result.stream;
         }
         stream?.clearState();
-    }, 30000);
+    });
 
     it('should receive the orderbook', async() => {
         expect(books).toBeDefined();
@@ -137,7 +137,7 @@ describe('onLastTradePrice', () => {
             stream = result.stream;
         }
         stream?.clearState();
-    }, 30000);
+    });
 
     it('should receive last trade price event', async() => {
         expect(lastTradePrice).toBeDefined();
@@ -177,7 +177,7 @@ describe('onPriceChange', () => {
             stream = result.stream;
         }
         stream?.clearState()
-    }, 30000);
+    });
 
     it('should receive onPriceChange event', async() => {
         expect(priceChange).toBeDefined();
