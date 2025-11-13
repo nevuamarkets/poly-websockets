@@ -1,11 +1,11 @@
 /// <reference types="vitest" />
 import { describe, it, expect, beforeEach } from 'vitest';
-import { OrderBookCache } from '../src/modules/OrderBookCache';
+import { OrderBookCache } from '../../src/modules/OrderBookCache';
 import {
     BookEvent,
     PriceChangeEvent,
     PriceLevel,
-} from '../src/types/PolymarketWebSocket';
+} from '../../src/types/PolymarketWebSocket';
 
 const ASSET_ID = 'asset-1'; 
 
