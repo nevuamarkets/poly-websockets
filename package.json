@@ -1,6 +1,6 @@
 {
   "name": "@nevuamarkets/poly-websockets",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Plug-and-play Polymarket WebSocket price alerts",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
