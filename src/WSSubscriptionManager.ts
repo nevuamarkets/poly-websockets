@@ -199,6 +199,20 @@ class WSSubscriptionManager {
         }
     }
 
+    /*
+        Returns statistics about the current state of the subscription manager.
+
+        Returns an object with:
+        - openWebSockets: The number of websockets that are currently in OPEN state
+        - subscribedAssetIds: The number of unique asset IDs that are currently subscribed
+    */
+    public getStatistics(): {
+        openWebSockets: number;
+        subscribedAssetIds: number;
+    } {
+        return this.groupRegistry.getStatistics();
+    }
+
     private async createWebSocketClient(groupId: string, handlers: WebSocketHandlers) {
         const group = this.groupRegistry.findGroupById(groupId);
 

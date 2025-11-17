@@ -90,6 +90,12 @@ Clears all subscriptions and state:
 - Closes all WebSocket connections
 - Clears the internal order book cache
 
+##### `getStatistics(): { openWebSockets: number; subscribedAssetIds: number }`
+
+Returns statistics about the current state of the subscription manager:
+- `openWebSockets`: The number of websockets that are currently in OPEN state
+- `subscribedAssetIds`: The number of unique asset IDs that are currently subscribed
+
 ### WebSocketHandlers
 
 Interface defining event handlers for different WebSocket events.

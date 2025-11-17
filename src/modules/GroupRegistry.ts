@@ -1,6 +1,7 @@
 import { Mutex } from 'async-mutex';
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
+import WebSocket from 'ws';
 import { WebSocketGroup, WebSocketStatus } from '../types/WebSocketSubscriptions';
 import { OrderBookCache } from './OrderBookCache';
 import { logger } from '../logger';
@@ -79,6 +80,38 @@ export class GroupRegistry {
      */
     public findGroupById(groupId: string): WebSocketGroup | undefined {
         return wsGroups.find(g => g.groupId === groupId);
+    }
+
+    /**
+     * Get statistics about the current state of the registry.
+     * 
+     * Returns an object with:
+     * - openWebSockets: The number of websockets that are currently in OPEN state
+     * - subscribedAssetIds: The number of unique asset IDs that are currently subscribed
+     */
+    public getStatistics(): {
+        openWebSockets: number;
+        subscribedAssetIds: number;
+    } {
+        let openWebSockets = 0;
+        const uniqueAssetIds = new Set<string>();
+
+        for (const group of wsGroups) {
+            // Count open websockets
+            if (group.wsClient && group.wsClient.readyState === WebSocket.OPEN) {
+                openWebSockets++;
+            }
+
+            // Collect unique asset IDs
+            for (const assetId of group.assetIds) {
+                uniqueAssetIds.add(assetId);
+            }
+        }
+
+        return {
+            openWebSockets,
+            subscribedAssetIds: uniqueAssetIds.size,
+        };
     }
 
     /**
