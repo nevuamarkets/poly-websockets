@@ -1,8 +1,8 @@
 /// <reference types="vitest" />
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { GroupRegistry } from '../src/modules/GroupRegistry';
-import { OrderBookCache } from '../src/modules/OrderBookCache';
-import { WebSocketGroup, WebSocketStatus } from '../src/types/WebSocketSubscriptions';
+import { GroupRegistry } from '../../src/modules/GroupRegistry';
+import { OrderBookCache } from '../../src/modules/OrderBookCache';
+import { WebSocketGroup, WebSocketStatus } from '../../src/types/WebSocketSubscriptions';
 import WebSocket from 'ws';
 
 const makeGroup = (id: string, size: number): WebSocketGroup => ({

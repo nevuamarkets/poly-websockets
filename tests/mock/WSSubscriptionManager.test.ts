@@ -1,9 +1,9 @@
 /// <reference types="vitest" />
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { WSSubscriptionManager, WebSocketHandlers } from '../src/WSSubscriptionManager';
-import { GroupRegistry } from '../src/modules/GroupRegistry';
-import { OrderBookCache } from '../src/modules/OrderBookCache';
-import { GroupSocket } from '../src/modules/GroupSocket';
+import { WSSubscriptionManager, WebSocketHandlers } from '../../src/WSSubscriptionManager';
+import { GroupRegistry } from '../../src/modules/GroupRegistry';
+import { OrderBookCache } from '../../src/modules/OrderBookCache';
+import { GroupSocket } from '../../src/modules/GroupSocket';
 import Bottleneck from 'bottleneck';
 import {
     BookEvent,
@@ -11,13 +11,13 @@ import {
     PriceChangeEvent,
     TickSizeChangeEvent,
     PolymarketPriceUpdateEvent
-} from '../src/types/PolymarketWebSocket';
-import { WebSocketGroup, WebSocketStatus } from '../src/types/WebSocketSubscriptions';
+} from '../../src/types/PolymarketWebSocket';
+import { WebSocketGroup, WebSocketStatus } from '../../src/types/WebSocketSubscriptions';
 
 // Mock all dependencies
-vi.mock('../src/modules/GroupRegistry');
-vi.mock('../src/modules/OrderBookCache');
-vi.mock('../src/modules/GroupSocket');
+vi.mock('../../src/modules/GroupRegistry');
+vi.mock('../../src/modules/OrderBookCache');
+vi.mock('../../src/modules/GroupSocket');
 vi.mock('bottleneck');
 
 const MockedGroupRegistry = vi.mocked(GroupRegistry);
@@ -290,7 +290,7 @@ describe('WSSubscriptionManager', () => {
 
                 // Only asset1 and asset3 are subscribed
                 mockGroupRegistry.getGroupIndicesForAsset
-                    .mockImplementation((assetId) => {
+                    .mockImplementation((assetId:String) => {
                         if (assetId === 'asset1' || assetId === 'asset3') return [0];
                         return [];
                     });
