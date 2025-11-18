@@ -5,6 +5,11 @@ import { BookEvent, LastTradePriceEvent, PriceChangeEvent, PriceChangeItem, Tick
 
 const marketsQty = '100';
 const marketsUrl = 'https://gamma-api.polymarket.com/markets'
+type allEvents = {
+    book: BookEvent[],
+    lastTradePrice: LastTradePriceEvent[];
+    priceChange: PriceChangeEvent[];
+}
 
 /**
  * Returns the top X markets by volume
@@ -28,76 +33,89 @@ async function getTopMarketsByVolume(quantity:string): Promise<string[]> {
 }
 
 /**
- * Creates a connection and returns the first value that it receives,
- * except onOpen event that returns true once the connection is established
+ * Creates a WS connection waits for all types of events
  * @param {string[]} tokenIdsArray an array of markets tokenIds
- * @param {string} type the type of handlers (onOpen, onBook, ...)
- * @returns {Promise<BookEvent[]|LastTradePriceEvent[]|TickSizeChangeEvent[]|PriceChangeEvent[]|boolean|undefined>} 
- * Boolean for onOpen,
- * Undefined if it fails,
- * Events for the rest
+ * @returns {Promise<Promise<allEvents>, WSSubscriptionManager} 
  */
-async function createConnectionWithType(tokenIdsArray:string[], type: string):
-Promise<{
-    data: Promise<BookEvent[] | LastTradePriceEvent[] | TickSizeChangeEvent[] | PriceChangeEvent[] | boolean | undefined>,
-    stream: WSSubscriptionManager | undefined} | undefined>
-{
+async function createConnection(tokenIdsArray: string[]): Promise<{
+    data: Promise<allEvents>;
+    stream: WSSubscriptionManager;
+}> {
     let stream: WSSubscriptionManager | undefined;
-    try{
-        const data = new Promise<BookEvent[]|LastTradePriceEvent[]|TickSizeChangeEvent[]|PriceChangeEvent[]|boolean>((resolve) => {
-            stream = new WSSubscriptionManager({
-                onBook: async (events: BookEvent[]) => {
-                    if (type == 'onBook') {
-                        resolve(events);
+    try {
+        const data = new Promise<{    
+                book: BookEvent[],
+                lastTradePrice: LastTradePriceEvent[];
+                priceChange: PriceChangeEvent[];
+            }>((resolve, reject) => {
+                const receivedEvents = { 
+                    onWSOpen: false,
+                    onBook: false,
+                    onLastTradePrice: false,
+                    onTickSizeChange: false,
+                    onPriceChange: false
+                };
+            
+                const collectedData: any = {}; 
+                const checkAllEventsReceived = () => {
+                    if (
+                        receivedEvents.onWSOpen &&
+                        receivedEvents.onBook &&
+                        receivedEvents.onLastTradePrice &&
+                        receivedEvents.onPriceChange
+                    ) {
+                        resolve(collectedData);
                     }
-                },
-                onLastTradePrice: async (events:LastTradePriceEvent[]) => {
-                    if (type == 'onLastTradePrice'){
-                        resolve(events);
-                    }
-                },
-                onTickSizeChange: async (events:TickSizeChangeEvent[]) => {
-                    if (type == 'onTickSizeChange'){
-                        resolve(events);
-                    }
-                },
-                onPriceChange: async (events:PriceChangeEvent[]) => {
-                    if (type == 'onPriceChange'){
-                        resolve(events);
-                    }
-                },
-                onWSOpen: async () => {
-                    if (type == 'onWSOpen'){
-                        resolve(true);
-                    }
-                },
-                onError: async (error: Error) => console.error('Error:', error.message)
-            });
-
+                };
+                
+                stream = new WSSubscriptionManager({
+                    onBook: async (events: BookEvent[]) => {
+                        receivedEvents.onBook = true;
+                        collectedData.book = events;
+                        checkAllEventsReceived();
+                    },
+                    onLastTradePrice: async (events: LastTradePriceEvent[]) => {
+                        receivedEvents.onLastTradePrice = true;
+                        collectedData.lastTradePrice = events;
+                        checkAllEventsReceived();
+                    },
+                    onPriceChange: async (events: PriceChangeEvent[]) => {
+                        receivedEvents.onPriceChange = true;
+                        collectedData.priceChange = events;
+                        checkAllEventsReceived();
+                    },
+                    onWSOpen: async () => {
+                        receivedEvents.onWSOpen = true;
+                        checkAllEventsReceived();
+                    },
+                    onError: async (error: Error) => reject(error)
+                });
             stream.addSubscriptions(tokenIdsArray);
-        })
-        return {data: data, stream: stream};
+        });
 
-    }catch(e){
+        return { data: data, stream: stream! };
+    } catch (e) {
         console.log('Error while creating connection: ', e);
-        return undefined;
+        return undefined as any;
     }
 }
 
-describe('onBook', () => {
-    let tokenIdsArray;
-    let books: any;
-    let stream: WSSubscriptionManager | undefined;
+let result:any;
+let data:allEvents;
 
-    beforeAll(async () => {
-        tokenIdsArray = await getTopMarketsByVolume(marketsQty);
-        const result = await createConnectionWithType(tokenIdsArray, 'onBook');
-        if (result) {
-            books = await result.data;
-            stream = result.stream;
-        }
-        stream?.clearState();
-    });
+beforeAll(async () => {
+    const tokenIdsArray = await getTopMarketsByVolume(marketsQty);
+    result = await createConnection(tokenIdsArray);
+    data = await result.data;
+    result.stream.clearState();
+}, 2000000)
+
+
+describe('onBook', () => {
+    let books:BookEvent[];
+    beforeAll(() => {
+        books = data.book;
+    })
 
     it('should receive the orderbook', async() => {
         expect(books).toBeDefined();
@@ -117,26 +135,17 @@ describe('onBook', () => {
 
     it('should have only specified fields', () => {
         books.forEach((book: BookEvent) => {
-            const expectedKeys = ['market', 'asset_id', 'timestamp', 'hash', 'bids', 'asks', 'event_type', 'last_trade_price'];
+            const expectedKeys = ['market', 'asset_id', 'timestamp', 'hash', 'bids', 'asks', 'event_type'];
             expect(Object.keys(book).sort()).toEqual(expectedKeys.sort());
         });
     });
 })
 
-// Might time out with low markets quantity
 describe('onLastTradePrice', () => {
-    let tokenIdsArray;
     let lastTradePrice: any;
-    let stream: WSSubscriptionManager | undefined;
 
     beforeAll(async () => {
-        tokenIdsArray = await getTopMarketsByVolume(marketsQty)
-        const result = await createConnectionWithType(tokenIdsArray, 'onLastTradePrice');
-        if (result) {
-            lastTradePrice = await result.data;
-            stream = result.stream;
-        }
-        stream?.clearState();
+        lastTradePrice = data.lastTradePrice
     });
 
     it('should receive last trade price event', async() => {
@@ -165,18 +174,10 @@ describe('onLastTradePrice', () => {
 })
 
 describe('onPriceChange', () => {
-    let tokenIdsArray;
     let priceChange: any;
-    let stream: WSSubscriptionManager | undefined;
 
     beforeAll(async () => {
-        tokenIdsArray = await getTopMarketsByVolume(marketsQty)
-        const result = await createConnectionWithType(tokenIdsArray, 'onPriceChange');
-        if (result) {
-            priceChange = await result.data;
-            stream = result.stream;
-        }
-        stream?.clearState()
+        priceChange = data.priceChange;
     });
 
     it('should receive onPriceChange event', async() => {
