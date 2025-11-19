@@ -79,15 +79,15 @@ class WSSubscriptionManager {
         }, this.reconnectAndCleanupIntervalMs);
     }
 
-    /*
-        Clears all WebSocket subscriptions and state.
-
-        This will:
-
-        1. Remove all subscriptions and groups
-        2. Close all WebSocket connections
-        3. Clear the order book cache
-    */
+    /**
+     * Clears all WebSocket subscriptions and state.
+     * 
+     * This will:
+     * 
+     * 1. Remove all subscriptions and groups
+     * 2. Close all WebSocket connections
+     * 3. Clear the order book cache
+     */
     public async clearState() {
         const previousGroups = await this.groupRegistry.clearAllGroups();
 
@@ -100,14 +100,17 @@ class WSSubscriptionManager {
         this.bookCache.clear();
     }
 
-    /* 
-        This function is called when:
-        - a websocket event is received from the Polymarket WS
-        - a price update event detected, either by after a 'last_trade_price' event or a 'price_change' event
-        depending on the current bid-ask spread (see https://docs.polymarket.com/polymarket-learn/trading/how-are-prices-calculated)
-
-        The user handlers will be called **ONLY** for assets that are actively subscribed to by any groups.
-    */
+    /** 
+     * This function is called when:
+     * - a websocket event is received from the Polymarket WS
+     * - a price update event detected, either by after a 'last_trade_price' event or a 'price_change' event
+     * depending on the current bid-ask spread (see https://docs.polymarket.com/polymarket-learn/trading/how-are-prices-calculated)
+     * 
+     * The user handlers will be called **ONLY** for assets that are actively subscribed to by any groups.
+     * 
+     * @param events - The events to process.
+     * @param action - The action to perform on the filtered events.
+     */
     private async actOnSubscribedEvents<T extends PolymarketWSEvent | PolymarketPriceUpdateEvent>(events: T[], action?: (events: T[]) => Promise<void>) {
 
         // Filter out events that are not subscribed to by any groups
@@ -148,13 +151,15 @@ class WSSubscriptionManager {
         await action?.(events);
     }
 
-    /*  
-        Edits wsGroups: Adds new subscriptions.
-
-        - Filters out assets that are already subscribed
-        - Finds a group with capacity or creates a new one
-        - Creates a new WebSocket client and adds it to the group
-    */
+    /**  
+     * Edits wsGroups: Adds new subscriptions.
+     * 
+     * - Filters out assets that are already subscribed
+     * - Finds a group with capacity or creates a new one
+     * - Creates a new WebSocket client and adds it to the group
+     * 
+     * @param assetIdsToAdd - The asset IDs to add subscriptions for.
+     */
     public async addSubscriptions(assetIdsToAdd: string[]) {
         try {
             const groupIdsToConnect = await this.groupRegistry.addAssets(assetIdsToAdd, this.maxMarketsPerWS);
@@ -167,11 +172,13 @@ class WSSubscriptionManager {
         }
     }
 
-    /*  
-        Edits wsGroups: Removes subscriptions.
-        The group will use the updated subscriptions when it reconnects.
-        We do that because we don't want to miss events by reconnecting.
-    */
+    /**  
+     * Edits wsGroups: Removes subscriptions.
+     * The group will use the updated subscriptions when it reconnects.
+     * We do that because we don't want to miss events by reconnecting.
+     * 
+     * @param assetIdsToRemove - The asset IDs to remove subscriptions for.
+     */
     public async removeSubscriptions(assetIdsToRemove: string[]) {
         try {
             await this.groupRegistry.removeAssets(assetIdsToRemove, this.bookCache);
@@ -181,12 +188,12 @@ class WSSubscriptionManager {
         }
     }
 
-    /*
-        This function runs periodically and:
-
-        - Tries to reconnect groups that have assets and are disconnected
-        - Cleans up groups that have no assets
-    */
+    /**
+     * This function runs periodically and:
+     * 
+     * - Tries to reconnect groups that have assets and are disconnected
+     * - Cleans up groups that have no assets
+     */
     private async reconnectAndCleanupGroups() {
         try {
             const reconnectIds = await this.groupRegistry.getGroupsToReconnectAndCleanup();
