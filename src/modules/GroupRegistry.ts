@@ -43,7 +43,7 @@ export class GroupRegistry {
     /**
      * Find the first group with capacity to hold new assets.
      * 
-     * Returns the groupId if found, otherwise null.
+     * @returns The groupId if found, otherwise null.
      */
     public findGroupWithCapacity(newAssetLen: number, maxPerWS: number): string | null {
         for (const group of wsGroups) {
@@ -56,7 +56,8 @@ export class GroupRegistry {
     /**
      * Get the indices of all groups that contain the asset.
      * 
-     * Returns an array of indices.
+     * @param assetId - The tokenId of a market.
+     * @returns An array of indices.
      */
     public getGroupIndicesForAsset(assetId: string): number[] {
         const indices: number[] = [];
@@ -68,6 +69,9 @@ export class GroupRegistry {
 
     /**
      * Check if any group contains the asset.
+     * 
+     * @param assetId - The tokenId of a market.
+     * @returns True if found.
      */
     public hasAsset(assetId: string): boolean {
         return wsGroups.some(group => group.assetIds.has(assetId));
@@ -76,7 +80,8 @@ export class GroupRegistry {
     /**
      * Find the group by groupId.
      * 
-     * Returns the group if found, otherwise undefined.
+     * @param groupId - The group UUID.
+     * @returns The group if found, otherwise undefined.
      */
     public findGroupById(groupId: string): WebSocketGroup | undefined {
         return wsGroups.find(g => g.groupId === groupId);
@@ -119,7 +124,7 @@ export class GroupRegistry {
      * caller can perform any asynchronous cleanup (closing sockets, etc.)
      * outside the lock. 
      * 
-     * Returns the removed groups.
+     * @returns The removed groups.
      */
     public async clearAllGroups(): Promise<WebSocketGroup[]> {
         let removed: WebSocketGroup[] = [];
@@ -212,10 +217,12 @@ export class GroupRegistry {
     /**
      * Remove asset subscriptions from every group that contains the asset.
      * 
-     * It should be only one group that contains the asset, we search all of them
+     * It should be only one group that contains the asset, but we search all of them
      * regardless.
      * 
-     * Returns the list of assetIds that were removed.
+     * @param assetIds - The tokenIds of the markets to remove.
+     * @param bookCache - The stored orderbook.
+     * @returns The list of assetIds that were removed.
      */
     public async removeAssets(assetIds: string[], bookCache: OrderBookCache): Promise<string[]> {
         const removedAssetIds: string[] = [];
@@ -241,6 +248,8 @@ export class GroupRegistry {
 
     /**
      * Disconnect a group.
+     * 
+     * @param group - The group to disconnect.
      */
     public disconnectGroup(group: WebSocketGroup) {
         group.wsClient?.close();
@@ -260,7 +269,7 @@ export class GroupRegistry {
      * – Dead (but non-empty) groups are reset so that caller can reconnect them.
      * – Pending groups are returned so that caller can connect them.
      * 
-     * Returns an array of group IDs that need to be reconnected, after cleaning up empty and cleanup-marked groups.
+     * @returns An array of group IDs that need to be reconnected, after cleaning up empty and cleanup-marked groups.
      */
     public async getGroupsToReconnectAndCleanup(): Promise<string[]> {
         const reconnectIds: string[] = [];

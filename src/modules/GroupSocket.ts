@@ -71,6 +71,16 @@ export class GroupSocket {
         this.setupEventHandlers();
     }
 
+    /**
+     * Sets up event handlers for the WebSocket connection.
+     * 
+     * Handles:
+     * - 'open': Authenticates and starts ping interval
+     * - 'message': Parses and routes events
+     * - 'pong': Handles pong responses
+     * - 'error': Handles errors
+     * - 'close': Handles connection closure
+     */
     private setupEventHandlers() {
         const group = this.group;
         const handlers = this.handlers;
@@ -249,6 +259,11 @@ export class GroupSocket {
         }
     }
 
+    /**
+     * Handles book events by updating the cache and notifying listeners.
+     * 
+     * @param bookEvents - The book events to process.
+     */
     private async handleBookEvents(bookEvents: BookEvent[]): Promise<void> {
         if (bookEvents.length) {
             for (const event of bookEvents) {
@@ -258,12 +273,26 @@ export class GroupSocket {
         }
     }
 
+    /**
+     * Handles tick size change events by notifying listeners.
+     * 
+     * @param tickEvents - The tick size change events to process.
+     */
     private async handleTickEvents(tickEvents: TickSizeChangeEvent[]): Promise<void> {
         if (tickEvents.length) {
             await this.handlers.onTickSizeChange?.(tickEvents);
         }
     }
 
+    /**
+     * Handles price change events.
+     * 
+     * - Updates the order book cache
+     * - Calculates derived price updates based on spread and midpoint
+     * - Notifies listeners of price changes and derived updates
+     * 
+     * @param priceChangeEvents - The price change events to process.
+     */
     private async handlePriceChangeEvents(priceChangeEvents: PriceChangeEvent[]): Promise<void> {
         if (priceChangeEvents.length) {
             await this.handlers.onPriceChange?.(priceChangeEvents);
@@ -341,6 +370,14 @@ export class GroupSocket {
         }
     }
 
+    /**
+     * Handles last trade price events.
+     * 
+     * - Notifies listeners of last trade price
+     * - Calculates derived price updates based on spread
+     * 
+     * @param lastTradeEvents - The last trade price events to process.
+     */
     private async handleLastTradeEvents(lastTradeEvents: LastTradePriceEvent[]): Promise<void> {
         if (lastTradeEvents.length) {
             /*

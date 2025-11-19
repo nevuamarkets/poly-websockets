@@ -16,8 +16,7 @@ export interface BookEntry {
     midpoint: string | null;
     spread: string | null;
 }
-
-export 
+ 
 
 function sortDescendingInPlace(bookSide: PriceLevel[]): void {
     bookSide.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
@@ -36,6 +35,7 @@ export class OrderBookCache {
 
     /**
      * Replace full book (after a `book` event)
+     * @param event new orderbook event
      */
     public replaceBook(event: BookEvent): void {
         let lastPrice = null;
@@ -68,8 +68,9 @@ export class OrderBookCache {
     /**
      * Update a cached book from a `price_change` event.
      * 
-     * Returns true if the book was updated.
-     * Throws if the book is not found.
+     * @param event PriceChangeEvent
+     * @returns true if the book was updated.
+     * @throws if the book is not found.
      */
     public upsertPriceChange(event: PriceChangeEvent): void {
         // Iterate through price_changes array
@@ -105,11 +106,10 @@ export class OrderBookCache {
     }
 
     /**
-     * Return `true` if best-bid/best-ask spread exceeds `cents`.
-     * 
      * Side effect: updates the book's spread
      * 
-     * Throws if either side of the book is empty.
+     * @returns `true` if best-bid/best-ask spread exceeds `cents`.
+     * @throws if either side of the book is empty.
      */
     public spreadOver(assetId: string, cents = 0.1): boolean {
         const book = this.bookCache[assetId];
@@ -183,7 +183,11 @@ export class OrderBookCache {
 
         return parseFloat(midpoint.toFixed(3)).toString();
     }
-
+    /**
+     * Removes a specific market from the orderbook if assetId is provided
+     * otherwise clears all orderbook
+     * @param assetId tokenId of a market 
+     */
     public clear(assetId?: string): void {
         if (assetId) {
             delete this.bookCache[assetId];
@@ -197,7 +201,7 @@ export class OrderBookCache {
     /**
      * Get a book entry by asset id.
      * 
-     * Return null if the book is not found.
+     * @returns book entry if found, otherwise null
      */
     public getBookEntry(assetId: string): BookEntry | null {
         if (!this.bookCache[assetId]) {
