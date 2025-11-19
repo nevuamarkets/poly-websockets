@@ -35,7 +35,7 @@ export class OrderBookCache {
 
     /**
      * Replace full book (after a `book` event)
-     * @param {BookEvent} event new orderbook event
+     * @param event new orderbook event
      */
     public replaceBook(event: BookEvent): void {
         let lastPrice = null;
@@ -68,7 +68,7 @@ export class OrderBookCache {
     /**
      * Update a cached book from a `price_change` event.
      * 
-     * @param {PriceChangeEvent} event PriceChangeEvent
+     * @param event PriceChangeEvent
      * @returns true if the book was updated.
      * @throws if the book is not found.
      */
@@ -186,7 +186,7 @@ export class OrderBookCache {
     /**
      * Removes a specific market from the orderbook if assetId is provided
      * otherwise clears all orderbook
-     * @param {string} assetId tokenId of a market 
+     * @param assetId tokenId of a market 
      */
     public clear(assetId?: string): void {
         if (assetId) {
@@ -201,7 +201,7 @@ export class OrderBookCache {
     /**
      * Get a book entry by asset id.
      * 
-     * @returns {BookEntry} book entry if found, otherwise null
+     * @returns book entry if found, otherwise null
      */
     public getBookEntry(assetId: string): BookEntry | null {
         if (!this.bookCache[assetId]) {
