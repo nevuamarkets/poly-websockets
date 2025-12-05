@@ -254,6 +254,7 @@ export class GroupRegistry {
     public disconnectGroup(group: WebSocketGroup) {
         group.wsClient?.close();
         group.wsClient = null;
+        group.connecting = false;
 
         logger.info({
             message: 'Disconnected group',
@@ -296,8 +297,10 @@ export class GroupRegistry {
                     group.assetIds = new Set();
                     continue;
                 }
-
                 if (group.status === WebSocketStatus.PENDING) {
+                    if (group.connecting) {
+                        continue;
+                    }
                     reconnectIds.push(group.groupId);
                 }
             }

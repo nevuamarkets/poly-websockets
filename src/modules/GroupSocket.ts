@@ -37,10 +37,15 @@ export class GroupSocket {
      * 
      */
     public async connect(): Promise<void> {
+        if (this.group.connecting) {
+            return;
+        }
         if (this.group.assetIds.size === 0) {
             this.group.status = WebSocketStatus.CLEANUP;
             return;
         }
+
+	    this.group.connecting = true;
 
         try {
             logger.info({
@@ -66,6 +71,8 @@ export class GroupSocket {
         } catch (err) {
             this.group.status = WebSocketStatus.DEAD;
             throw err; // caller responsible for error handler
+        } finally {
+            this.group.connecting = false;
         }
 
         this.setupEventHandlers();
