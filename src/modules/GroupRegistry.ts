@@ -298,9 +298,9 @@ export class GroupRegistry {
                     continue;
                 }
                 if (group.status === WebSocketStatus.PENDING) {
-		    if (group.connecting) {
-			    continue;
-		    }
+                    if (group.connecting) {
+                        continue;
+                    }
                     reconnectIds.push(group.groupId);
                 }
             }
