@@ -13,6 +13,7 @@ export type WebSocketGroup = {
     assetIds: Set<string>;
     wsClient: WebSocket | null;
     status: WebSocketStatus;
+    connecting?: boolean;
 };
 
 export type SubscriptionManagerOptions = {
