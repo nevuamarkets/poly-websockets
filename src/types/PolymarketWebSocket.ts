@@ -8,6 +8,74 @@ export type PriceLevel = {
     size: string;
 };
 
+// ============================================================================
+// WebSocket Messages (Client -> Server)
+// ============================================================================
+
+/**
+ * Initial subscription message sent when connecting to the market WebSocket.
+ * 
+ * @example
+ * {
+ *   assets_ids: ["71321045679252212594626385532706912750332728571942532289631379312455583992563"],
+ *   type: "market"
+ * }
+ */
+export type MarketSubscriptionMessage = {
+    assets_ids: string[];
+    type: 'market';
+    custom_feature_enabled?: boolean; // Custom feature flag for Polymarket
+};
+
+/**
+ * Subscribe to additional assets on an existing connection.
+ * 
+ * IMPORTANT: The Polymarket WebSocket protocol does NOT send any confirmation or
+ * acknowledgment message for subscribe operations. The server silently accepts the
+ * request, and the client will start receiving events for the subscribed assets.
+ * There is no way to know if a subscription was rejected (events simply won't arrive).
+ * 
+ * @example
+ * {
+ *   operation: "subscribe",
+ *   assets_ids: ["71321045679252212594626385532706912750332728571942532289631379312455583992563"]
+ * }
+ */
+export type SubscribeMessage = {
+    operation: 'subscribe';
+    assets_ids: string[];
+    custom_feature_enabled?: boolean; // Custom feature flag for Polymarket
+};
+
+/**
+ * Unsubscribe from assets on an existing connection.
+ * 
+ * IMPORTANT: The Polymarket WebSocket protocol does NOT send any confirmation or
+ * acknowledgment message for unsubscribe operations. The server silently accepts the
+ * request, and the client will stop receiving events for the unsubscribed assets.
+ * There is no way to know if an unsubscription was rejected.
+ * 
+ * @example
+ * {
+ *   operation: "unsubscribe",
+ *   assets_ids: ["71321045679252212594626385532706912750332728571942532289631379312455583992563"]
+ * }
+ */
+export type UnsubscribeMessage = {
+    operation: 'unsubscribe';
+    assets_ids: string[];
+    custom_feature_enabled?: boolean; // Custom feature flag for Polymarket
+};
+
+/**
+ * Union type for all client-to-server messages.
+ */
+export type PolymarketWSMessage = MarketSubscriptionMessage | SubscribeMessage | UnsubscribeMessage;
+
+// ============================================================================
+// WebSocket Events (Server -> Client)
+// ============================================================================
+
 /**
  * Represents a single price change item
  */
@@ -107,7 +175,8 @@ export type BookEvent = {
  *   price: "0.12",
  *   side: "BUY",
  *   size: "8.333332",
- *   timestamp: "1740760245471"
+ *   timestamp: "1740760245471",
+ *   transaction_hash: "0xd449923990fce41c5fcd1fef8079df5b1dc55fa00c2df62831d0bd3a7cdcc2aa"
  * }
  */
 export type LastTradePriceEvent = {
@@ -119,6 +188,7 @@ export type LastTradePriceEvent = {
     side: 'BUY' | 'SELL';
     size: string;
     timestamp: string;
+    transaction_hash: string;
 };
 
 /**
@@ -251,8 +321,10 @@ export type WebSocketHandlers = {
 
     // Error handling
     onError?: (error: Error) => Promise<void>;
-    onWSClose?: (groupId: string, code: number, reason: string) => Promise<void>;
-    onWSOpen?: (groupId: string, assetIds: string[]) => Promise<void>;
+    
+    // Connection lifecycle events
+    onWSClose?: (managerId: string, code: number, reason: string) => Promise<void>;
+    onWSOpen?: (managerId: string, pendingAssetIds: string[]) => Promise<void>;
 }
 
 /**

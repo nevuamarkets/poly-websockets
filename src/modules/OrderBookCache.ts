@@ -81,11 +81,19 @@ export class OrderBookCache {
             }
 
             const { price, size, side } = priceChange;
+            const sizeNum = parseFloat(size);
+            
             if (side === 'BUY') {
                 const i = book.bids.findIndex(bid => bid.price === price);
                 if (i !== -1) {
-                    book.bids[i].size = size;
-                } else {
+                    // Remove entry if size is zero or effectively zero
+                    if (sizeNum === 0 || size === '0') {
+                        book.bids.splice(i, 1);
+                    } else {
+                        book.bids[i].size = size;
+                    }
+                } else if (sizeNum > 0) {
+                    // Only add if size is non-zero
                     book.bids.push({ price, size });
                     
                     // Ensure the bids are sorted ascending
@@ -94,8 +102,14 @@ export class OrderBookCache {
             } else {
                 const i = book.asks.findIndex(ask => ask.price === price);
                 if (i !== -1) {
-                    book.asks[i].size = size;
-                } else {
+                    // Remove entry if size is zero or effectively zero
+                    if (sizeNum === 0 || size === '0') {
+                        book.asks.splice(i, 1);
+                    } else {
+                        book.asks[i].size = size;
+                    }
+                } else if (sizeNum > 0) {
+                    // Only add if size is non-zero
                     book.asks.push({ price, size });
 
                     // Ensure the asks are sorted descending

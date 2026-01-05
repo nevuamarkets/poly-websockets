@@ -1,27 +1,28 @@
-import Bottleneck from 'bottleneck';
-import WebSocket from 'ws';
-
-export enum WebSocketStatus {
-    PENDING = 'pending', // New group that is pending connection
-    ALIVE = 'alive',    // Group is connected and receiving events
-    DEAD = 'dead',      // Group is disconnected
-    CLEANUP = 'cleanup' // Group is marked for cleanup
+/**
+ * Connection status for the WebSocket.
+ */
+export enum WebSocketConnectionStatus {
+    DISCONNECTED = 'disconnected',
+    CONNECTING = 'connecting',
+    CONNECTED = 'connected',
 }
 
-export type WebSocketGroup = {
-    groupId: string;
-    assetIds: Set<string>;
-    wsClient: WebSocket | null;
-    status: WebSocketStatus;
-    connecting?: boolean;
-};
-
+/**
+ * Options for configuring the WSSubscriptionManager.
+ */
 export type SubscriptionManagerOptions = {
-    burstLimiter?: Bottleneck;
-
-    // How often to check for groups to reconnect and cleanup
+    /**
+     * How often to check for reconnection (in milliseconds).
+     * Default: 5000ms (5 seconds)
+     * 
+     * Note: We intentionally use a static interval rather than exponential backoff.
+     * Perhaps change this to exponential backoff in the future.
+     */
     reconnectAndCleanupIntervalMs?: number;
 
-    // How many assets to allow per WebSocket
-    maxMarketsPerWS?: number;
+    /**
+     * How often to flush pending subscriptions to the WebSocket (in milliseconds).
+     * Default: 100ms
+     */
+    pendingFlushIntervalMs?: number;
 }

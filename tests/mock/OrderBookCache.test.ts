@@ -233,4 +233,198 @@ describe('OrderBookCache', () => {
 
         expect(() => bookCache.spreadOver(ASSET_ID, 0.1)).toThrow("Spread is NaN: lowestAsk 'A' highestBid '0.02'");
     });
+
+    describe('zero-size entry handling', () => {
+        it('should remove bid entry when size is set to zero', () => {
+            // seed cache
+            const bookEvt: BookEvent = {
+                asset_id: ASSET_ID,
+                market: 'm',
+                timestamp: '0',
+                hash: 'h',
+                event_type: 'book',
+                bids: [
+                    { price: '0.01', size: '10' },
+                    { price: '0.02', size: '5' },
+                    { price: '0.03', size: '8' }
+                ],
+                asks: [
+                    { price: '0.98', size: '1' },
+                    { price: '0.99', size: '2' }
+                ]
+            };
+            bookCache.replaceBook(bookEvt);
+
+            // Set the 0.02 bid to size 0
+            const priceChange: PriceChangeEvent = {
+                market: 'm',
+                timestamp: '1',
+                event_type: 'price_change',
+                price_changes: [
+                    { 
+                        asset_id: ASSET_ID,
+                        price: '0.02', 
+                        side: 'BUY', 
+                        size: '0',
+                        hash: 'x',
+                        best_bid: '0.03',
+                        best_ask: '0.98'
+                    }
+                ]
+            };
+
+            bookCache.upsertPriceChange(priceChange);
+            
+            const entry = bookCache.getBookEntry(ASSET_ID);
+            expect(entry!.bids.length).toBe(2);
+            expect(entry!.bids.find(b => b.price === '0.02')).toBeUndefined();
+        });
+
+        it('should remove ask entry when size is set to zero', () => {
+            // seed cache
+            const bookEvt: BookEvent = {
+                asset_id: ASSET_ID,
+                market: 'm',
+                timestamp: '0',
+                hash: 'h',
+                event_type: 'book',
+                bids: [
+                    { price: '0.01', size: '10' },
+                    { price: '0.02', size: '5' }
+                ],
+                asks: [
+                    { price: '0.97', size: '3' },
+                    { price: '0.98', size: '1' },
+                    { price: '0.99', size: '2' }
+                ]
+            };
+            bookCache.replaceBook(bookEvt);
+
+            // Set the 0.98 ask to size 0
+            const priceChange: PriceChangeEvent = {
+                market: 'm',
+                timestamp: '1',
+                event_type: 'price_change',
+                price_changes: [
+                    { 
+                        asset_id: ASSET_ID,
+                        price: '0.98', 
+                        side: 'SELL', 
+                        size: '0',
+                        hash: 'x',
+                        best_bid: '0.02',
+                        best_ask: '0.97'
+                    }
+                ]
+            };
+
+            bookCache.upsertPriceChange(priceChange);
+            
+            const entry = bookCache.getBookEntry(ASSET_ID);
+            expect(entry!.asks.length).toBe(2);
+            expect(entry!.asks.find(a => a.price === '0.98')).toBeUndefined();
+        });
+
+        it('should not add new entry when size is zero', () => {
+            // seed cache
+            const bookEvt: BookEvent = {
+                asset_id: ASSET_ID,
+                market: 'm',
+                timestamp: '0',
+                hash: 'h',
+                event_type: 'book',
+                bids: [
+                    { price: '0.01', size: '10' },
+                    { price: '0.02', size: '5' }
+                ],
+                asks: [
+                    { price: '0.98', size: '1' },
+                    { price: '0.99', size: '2' }
+                ]
+            };
+            bookCache.replaceBook(bookEvt);
+
+            // Try to add a new price level with size 0
+            const priceChange: PriceChangeEvent = {
+                market: 'm',
+                timestamp: '1',
+                event_type: 'price_change',
+                price_changes: [
+                    { 
+                        asset_id: ASSET_ID,
+                        price: '0.50', 
+                        side: 'BUY', 
+                        size: '0',
+                        hash: 'x',
+                        best_bid: '0.02',
+                        best_ask: '0.98'
+                    }
+                ]
+            };
+
+            bookCache.upsertPriceChange(priceChange);
+            
+            const entry = bookCache.getBookEntry(ASSET_ID);
+            // Should still have only 2 bids
+            expect(entry!.bids.length).toBe(2);
+            expect(entry!.bids.find(b => b.price === '0.50')).toBeUndefined();
+        });
+
+        it('should handle multiple zero-size updates in one event', () => {
+            // seed cache
+            const bookEvt: BookEvent = {
+                asset_id: ASSET_ID,
+                market: 'm',
+                timestamp: '0',
+                hash: 'h',
+                event_type: 'book',
+                bids: [
+                    { price: '0.01', size: '10' },
+                    { price: '0.02', size: '5' },
+                    { price: '0.03', size: '8' }
+                ],
+                asks: [
+                    { price: '0.97', size: '3' },
+                    { price: '0.98', size: '1' },
+                    { price: '0.99', size: '2' }
+                ]
+            };
+            bookCache.replaceBook(bookEvt);
+
+            // Remove multiple entries at once
+            const priceChange: PriceChangeEvent = {
+                market: 'm',
+                timestamp: '1',
+                event_type: 'price_change',
+                price_changes: [
+                    { 
+                        asset_id: ASSET_ID,
+                        price: '0.01', 
+                        side: 'BUY', 
+                        size: '0',
+                        hash: 'x1',
+                        best_bid: '0.03',
+                        best_ask: '0.97'
+                    },
+                    { 
+                        asset_id: ASSET_ID,
+                        price: '0.99', 
+                        side: 'SELL', 
+                        size: '0',
+                        hash: 'x2',
+                        best_bid: '0.03',
+                        best_ask: '0.97'
+                    }
+                ]
+            };
+
+            bookCache.upsertPriceChange(priceChange);
+            
+            const entry = bookCache.getBookEntry(ASSET_ID);
+            expect(entry!.bids.length).toBe(2);
+            expect(entry!.asks.length).toBe(2);
+            expect(entry!.bids.find(b => b.price === '0.01')).toBeUndefined();
+            expect(entry!.asks.find(a => a.price === '0.99')).toBeUndefined();
+        });
+    });
 }); 

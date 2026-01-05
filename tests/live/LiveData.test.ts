@@ -1,7 +1,7 @@
 /// <reference types='vitest' />
 import { describe, it, expect, beforeAll } from 'vitest';
 import { WSSubscriptionManager } from '../../src/WSSubscriptionManager'
-import { BookEvent, LastTradePriceEvent, PriceChangeEvent, PriceChangeItem, TickSizeChangeEvent, WebSocketHandlers } from '../../src/types/PolymarketWebSocket'
+import { BookEvent, LastTradePriceEvent, PriceChangeEvent, PriceChangeItem, TickSizeChangeEvent, PriceLevel, WebSocketHandlers } from '../../src/types/PolymarketWebSocket'
 
 const marketsQty = '100';
 const marketsUrl = 'https://gamma-api.polymarket.com/markets'
@@ -10,6 +10,185 @@ type allEvents = {
     lastTradePrice: LastTradePriceEvent[];
     priceChange: PriceChangeEvent[];
 }
+
+/**
+ * Expected fields for each event type - must match the TypeScript types exactly.
+ * If the server sends additional or missing fields, tests will fail.
+ */
+const EXPECTED_FIELDS = {
+    BookEvent: ['market', 'asset_id', 'timestamp', 'hash', 'bids', 'asks', 'event_type'],
+    LastTradePriceEvent: ['market', 'asset_id', 'timestamp', 'fee_rate_bps', 'price', 'side', 'event_type', 'size', 'transaction_hash'],
+    PriceChangeEvent: ['market', 'timestamp', 'event_type', 'price_changes'],
+    PriceChangeItem: ['asset_id', 'price', 'size', 'side', 'hash', 'best_bid', 'best_ask'],
+    PriceLevel: ['price', 'size'],
+};
+
+/**
+ * Validates that an object has exactly the expected fields - no more, no less.
+ * Returns an error message if validation fails, null if successful.
+ */
+function validateExactFields(obj: Record<string, unknown>, expectedFields: string[], eventTypeName: string): string | null {
+    const actualFields = Object.keys(obj).sort();
+    const expected = [...expectedFields].sort();
+    
+    const missing = expected.filter(f => !actualFields.includes(f));
+    const extra = actualFields.filter(f => !expected.includes(f));
+    
+    if (missing.length > 0 || extra.length > 0) {
+        let error = `${eventTypeName} schema mismatch:\n`;
+        if (missing.length > 0) {
+            error += `  Missing fields: ${missing.join(', ')}\n`;
+        }
+        if (extra.length > 0) {
+            error += `  Extra fields: ${extra.join(', ')}\n`;
+        }
+        error += `  Expected: [${expected.join(', ')}]\n`;
+        error += `  Actual: [${actualFields.join(', ')}]\n`;
+        error += `  Object: ${JSON.stringify(obj, null, 2)}`;
+        return error;
+    }
+    
+    return null;
+}
+
+/**
+ * Unit tests for the validateExactFields function itself.
+ * These tests verify that schema mismatches (extra/missing fields) are caught.
+ */
+describe('validateExactFields - Schema Validation', () => {
+    const expectedFields = ['field_a', 'field_b', 'field_c'];
+
+    it('should return null when object has exactly the expected fields', () => {
+        const obj = { field_a: 'value', field_b: 123, field_c: true };
+        const result = validateExactFields(obj, expectedFields, 'TestEvent');
+        expect(result).toBeNull();
+    });
+
+    it('should detect EXTRA fields in the object', () => {
+        const obj = { 
+            field_a: 'value', 
+            field_b: 123, 
+            field_c: true, 
+            unexpected_field: 'should fail' 
+        };
+        const result = validateExactFields(obj, expectedFields, 'TestEvent');
+        
+        expect(result).not.toBeNull();
+        expect(result).toContain('schema mismatch');
+        expect(result).toContain('Extra fields: unexpected_field');
+    });
+
+    it('should detect MISSING fields in the object', () => {
+        const obj = { field_a: 'value', field_b: 123 }; // missing field_c
+        const result = validateExactFields(obj, expectedFields, 'TestEvent');
+        
+        expect(result).not.toBeNull();
+        expect(result).toContain('schema mismatch');
+        expect(result).toContain('Missing fields: field_c');
+    });
+
+    it('should detect BOTH extra AND missing fields', () => {
+        const obj = { 
+            field_a: 'value', 
+            field_b: 123, 
+            // missing field_c
+            new_field: 'extra' 
+        };
+        const result = validateExactFields(obj, expectedFields, 'TestEvent');
+        
+        expect(result).not.toBeNull();
+        expect(result).toContain('schema mismatch');
+        expect(result).toContain('Missing fields: field_c');
+        expect(result).toContain('Extra fields: new_field');
+    });
+
+    it('should detect multiple extra fields', () => {
+        const obj = { 
+            field_a: 'value', 
+            field_b: 123, 
+            field_c: true,
+            extra1: 'one',
+            extra2: 'two',
+            extra3: 'three'
+        };
+        const result = validateExactFields(obj, expectedFields, 'TestEvent');
+        
+        expect(result).not.toBeNull();
+        expect(result).toContain('Extra fields: extra1, extra2, extra3');
+    });
+
+    it('should detect multiple missing fields', () => {
+        const obj = { field_a: 'value' }; // missing field_b and field_c
+        const result = validateExactFields(obj, expectedFields, 'TestEvent');
+        
+        expect(result).not.toBeNull();
+        expect(result).toContain('Missing fields: field_b, field_c');
+    });
+
+    it('should include the event type name in error message', () => {
+        const obj = { field_a: 'value', extra: 'field' };
+        const result = validateExactFields(obj, expectedFields, 'MyCustomEventType');
+        
+        expect(result).not.toBeNull();
+        expect(result).toContain('MyCustomEventType schema mismatch');
+    });
+
+    it('should include the actual object in error message for debugging', () => {
+        const obj = { field_a: 'value', field_b: 123, unexpected: 'oops' };
+        const result = validateExactFields(obj, expectedFields, 'TestEvent');
+        
+        expect(result).not.toBeNull();
+        expect(result).toContain('"unexpected": "oops"');
+    });
+
+    // Simulate real-world scenario: Polymarket adds a new field
+    it('should catch if Polymarket adds a new field to LastTradePriceEvent', () => {
+        const simulatedServerResponse = {
+            market: '0x123',
+            asset_id: '456',
+            timestamp: '1234567890',
+            fee_rate_bps: '0',
+            price: '0.5',
+            side: 'BUY',
+            event_type: 'last_trade_price',
+            size: '100',
+            transaction_hash: '0xabc',
+            // Simulated NEW field that Polymarket might add in the future
+            new_polymarket_field: 'some_value'
+        };
+        
+        const result = validateExactFields(
+            simulatedServerResponse, 
+            EXPECTED_FIELDS.LastTradePriceEvent, 
+            'LastTradePriceEvent'
+        );
+        
+        expect(result).not.toBeNull();
+        expect(result).toContain('Extra fields: new_polymarket_field');
+    });
+
+    // Simulate real-world scenario: Polymarket removes a field
+    it('should catch if Polymarket removes a field from BookEvent', () => {
+        const simulatedServerResponse = {
+            market: '0x123',
+            asset_id: '456',
+            timestamp: '1234567890',
+            // hash is MISSING - maybe Polymarket deprecated it
+            bids: [],
+            asks: [],
+            event_type: 'book'
+        };
+        
+        const result = validateExactFields(
+            simulatedServerResponse, 
+            EXPECTED_FIELDS.BookEvent, 
+            'BookEvent'
+        );
+        
+        expect(result).not.toBeNull();
+        expect(result).toContain('Missing fields: hash');
+    });
+});
 
 /**
  * Returns the top X markets by volume
@@ -119,9 +298,10 @@ describe('onBook', () => {
 
     it('should receive the orderbook', async() => {
         expect(books).toBeDefined();
+        expect(books.length).toBeGreaterThan(0);
     })
 
-    it('should have all fileds', () => {
+    it('should have all expected fields with correct types', () => {
         books.forEach((book:BookEvent) => {
             expect(book.market).toBeTypeOf('string');
             expect(book.asset_id).toBeTypeOf('string');
@@ -133,27 +313,56 @@ describe('onBook', () => {
         });
     });
 
-    it('should have only specified fields', () => {
-        books.forEach((book: BookEvent) => {
-            const expectedKeys = ['market', 'asset_id', 'timestamp', 'hash', 'bids', 'asks', 'event_type'];
-            expect(Object.keys(book).sort()).toEqual(expectedKeys.sort());
+    it('should have EXACTLY the specified fields (no extra, no missing)', () => {
+        books.forEach((book: BookEvent, index: number) => {
+            const error = validateExactFields(book as unknown as Record<string, unknown>, EXPECTED_FIELDS.BookEvent, `BookEvent[${index}]`);
+            if (error) {
+                throw new Error(error);
+            }
+        });
+    });
+
+    it('should have PriceLevel with exactly price and size fields in bids', () => {
+        books.forEach((book: BookEvent, bookIndex: number) => {
+            book.bids.forEach((bid: PriceLevel, bidIndex: number) => {
+                const error = validateExactFields(bid as unknown as Record<string, unknown>, EXPECTED_FIELDS.PriceLevel, `BookEvent[${bookIndex}].bids[${bidIndex}]`);
+                if (error) {
+                    throw new Error(error);
+                }
+                expect(bid.price).toBeTypeOf('string');
+                expect(bid.size).toBeTypeOf('string');
+            });
+        });
+    });
+
+    it('should have PriceLevel with exactly price and size fields in asks', () => {
+        books.forEach((book: BookEvent, bookIndex: number) => {
+            book.asks.forEach((ask: PriceLevel, askIndex: number) => {
+                const error = validateExactFields(ask as unknown as Record<string, unknown>, EXPECTED_FIELDS.PriceLevel, `BookEvent[${bookIndex}].asks[${askIndex}]`);
+                if (error) {
+                    throw new Error(error);
+                }
+                expect(ask.price).toBeTypeOf('string');
+                expect(ask.size).toBeTypeOf('string');
+            });
         });
     });
 })
 
 describe('onLastTradePrice', () => {
-    let lastTradePrice: any;
+    let lastTradePrice: LastTradePriceEvent[];
 
     beforeAll(async () => {
-        lastTradePrice = data.lastTradePrice
+        lastTradePrice = data.lastTradePrice;
     });
 
     it('should receive last trade price event', async() => {
         expect(lastTradePrice).toBeDefined();
+        expect(lastTradePrice.length).toBeGreaterThan(0);
     })
 
-    it('should have all expected fields', () => {
-        lastTradePrice.forEach((ltp:LastTradePriceEvent) => {
+    it('should have all expected fields with correct types', () => {
+        lastTradePrice.forEach((ltp: LastTradePriceEvent) => {
             expect(ltp.asset_id).toBeTypeOf('string');
             expect(ltp.event_type).toBe('last_trade_price');
             expect(ltp.fee_rate_bps).toBeTypeOf('string');
@@ -162,19 +371,22 @@ describe('onLastTradePrice', () => {
             expect(ltp.side).toBeTypeOf('string');
             expect(ltp.size).toBeTypeOf('string');
             expect(ltp.timestamp).toBeTypeOf('string');
+            expect(ltp.transaction_hash).toBeTypeOf('string');
         });
     });
 
-    it('should have only specified fields', () => {
-        lastTradePrice.forEach((ltp: BookEvent) => {
-            const expectedKeys = ['market', 'asset_id', 'timestamp', 'fee_rate_bps', 'price', 'side', 'event_type', 'size', 'transaction_hash'];
-            expect(Object.keys(ltp).sort()).toEqual(expectedKeys.sort());
+    it('should have EXACTLY the specified fields (no extra, no missing)', () => {
+        lastTradePrice.forEach((ltp: LastTradePriceEvent, index: number) => {
+            const error = validateExactFields(ltp as unknown as Record<string, unknown>, EXPECTED_FIELDS.LastTradePriceEvent, `LastTradePriceEvent[${index}]`);
+            if (error) {
+                throw new Error(error);
+            }
         });
     });
 })
 
 describe('onPriceChange', () => {
-    let priceChange: any;
+    let priceChange: PriceChangeEvent[];
 
     beforeAll(async () => {
         priceChange = data.priceChange;
@@ -182,10 +394,11 @@ describe('onPriceChange', () => {
 
     it('should receive onPriceChange event', async() => {
         expect(priceChange).toBeDefined();
+        expect(priceChange.length).toBeGreaterThan(0);
     })
     
-    it('should have all expected fileds', () => {
-        priceChange.forEach((pc:PriceChangeEvent) => {
+    it('should have all expected fields with correct types', () => {
+        priceChange.forEach((pc: PriceChangeEvent) => {
             expect(pc.market).toBeTypeOf('string');
             expect(pc.timestamp).toBeTypeOf('string');
             expect(pc.event_type).toBe('price_change');
@@ -193,15 +406,37 @@ describe('onPriceChange', () => {
         });
     });
 
-    it('should have all expected fileds in price_changes array', () => {
-        priceChange[0].price_changes.forEach((pc:PriceChangeItem) => {
-            expect(pc.asset_id).toBeTypeOf('string');
-            expect(pc.price).toBeTypeOf('string');
-            expect(pc.size).toBeTypeOf('string');
-            expect(pc.side).toBeTypeOf('string');
-            expect(pc.hash).toBeTypeOf('string');
-            expect(pc.best_bid).toBeTypeOf('string');
-            expect(pc.best_ask).toBeTypeOf('string');
+    it('should have EXACTLY the specified fields (no extra, no missing)', () => {
+        priceChange.forEach((pc: PriceChangeEvent, index: number) => {
+            const error = validateExactFields(pc as unknown as Record<string, unknown>, EXPECTED_FIELDS.PriceChangeEvent, `PriceChangeEvent[${index}]`);
+            if (error) {
+                throw new Error(error);
+            }
+        });
+    });
+
+    it('should have all expected fields with correct types in price_changes array', () => {
+        priceChange.forEach((pc: PriceChangeEvent) => {
+            pc.price_changes.forEach((item: PriceChangeItem) => {
+                expect(item.asset_id).toBeTypeOf('string');
+                expect(item.price).toBeTypeOf('string');
+                expect(item.size).toBeTypeOf('string');
+                expect(item.side).toBeTypeOf('string');
+                expect(item.hash).toBeTypeOf('string');
+                expect(item.best_bid).toBeTypeOf('string');
+                expect(item.best_ask).toBeTypeOf('string');
+            });
+        });
+    });
+
+    it('should have EXACTLY the specified fields in PriceChangeItem (no extra, no missing)', () => {
+        priceChange.forEach((pc: PriceChangeEvent, pcIndex: number) => {
+            pc.price_changes.forEach((item: PriceChangeItem, itemIndex: number) => {
+                const error = validateExactFields(item as unknown as Record<string, unknown>, EXPECTED_FIELDS.PriceChangeItem, `PriceChangeEvent[${pcIndex}].price_changes[${itemIndex}]`);
+                if (error) {
+                    throw new Error(error);
+                }
+            });
         });
     });
 })

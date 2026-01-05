@@ -1,6 +1,6 @@
 # Poly-WebSockets
 
-A TypeScript library for **real-time Polymarket market price alerts** over **Websocket** with **automatic reconnections** and **easy subscription management**.
+A TypeScript library for **real-time Polymarket market data** over **WebSocket** with **automatic reconnections** and **easy subscription management**.
 
 Powering [Nevua Markets](https://nevua.markets)
 
@@ -12,50 +12,50 @@ npm install @nevuamarkets/poly-websockets
 
 ## Features
 
-- 📊 **Real-time Market Updates**: Get `book` , `price_change`, `tick_size_change` and `last_trade_price` real-time market events from Polymarket WSS
-- 🎯 **Derived Future Price Event**: Implements Polymarket's [price calculation logic](https://docs.polymarket.com/polymarket-learn/trading/how-are-prices-calculated#future-price) (midpoint vs last trade price based on spread)
-- 🔗 **Group Management**: Efficiently manages multiple asset subscriptions across connection groups **without losing events** when subscribing / unsubscribing assets.
-- 🔄 **Automatic Connection Management**: Handles WebSocket connections, reconnections, and cleanup for grouped assetId (i.e. clobTokenId) subscriptions
-- 🚦 **Rate Limiting**: Built-in rate limiting to respect Polymarket API limits
+- 📊 **Real-time Market Updates**: Get `book`, `price_change`, `tick_size_change` and `last_trade_price` events from Polymarket WebSocket
+- 🎯 **Derived Price Event**: Implements Polymarket's [price calculation logic](https://docs.polymarket.com/polymarket-learn/trading/how-are-prices-calculated#future-price) (midpoint vs last trade price based on spread)
+- 🔗 **Dynamic Subscriptions**: Subscribe and unsubscribe to assets without reconnecting
+- 🔄 **Automatic Reconnection**: Handles connection drops with automatic reconnection
 - 💪 **TypeScript Support**: Full TypeScript definitions for all events and handlers
+- 🔒 **Independent Instances**: Each manager instance is fully isolated with its own WebSocket connection
 
 ## Quick Start
 
 ```typescript
-import {
-  WSSubscriptionManager,
-  WebSocketHandlers
-  } from '@nevuamarkets/poly-websockets';
+import { WSSubscriptionManager } from '@nevuamarkets/poly-websockets';
 
-// Create the subscription manager with your own handlers
 const manager = new WSSubscriptionManager({
-  onBook: async (events: BookEvent[]) => {
-    for (const event of events) {
-      console.log('book event', JSON.stringify(event, null, 2))
-    }
+  onBook: async (events) => {
+    console.log('Book events:', events);
   },
-  onPriceChange: async (events: PriceChangeEvent[]) => {
-    for (const event of events) {
-      console.log('price change event', JSON.stringify(event, null, 2))
-    }
+  onPriceChange: async (events) => {
+    console.log('Price change events:', events);
+  },
+  onPolymarketPriceUpdate: async (events) => {
+    // Derived price following Polymarket's display logic
+    console.log('Price updates:', events);
+  },
+  onError: async (error) => {
+    console.error('Error:', error.message);
   }
 });
 
 // Subscribe to assets
 await manager.addSubscriptions(['asset-id-1', 'asset-id-2']);
 
+// Get monitored assets
+console.log('Monitored:', manager.getAssetIds());
+
 // Remove subscriptions
 await manager.removeSubscriptions(['asset-id-1']);
 
-// Clear all subscriptions and connections
+// Clear all subscriptions and close connection
 await manager.clearState();
 ```
 
 ## API Reference
 
 ### WSSubscriptionManager
-
-The main class that manages WebSocket connections and subscriptions.
 
 #### Constructor
 
@@ -64,115 +64,79 @@ new WSSubscriptionManager(handlers: WebSocketHandlers, options?: SubscriptionMan
 ```
 
 **Parameters:**
-- `handlers` - Event handlers for different WebSocket events
-- `options` - Optional configuration object:
-  - `maxMarketsPerWS?: number` - Maximum assets per WebSocket connection (default: 100)
-  - `reconnectAndCleanupIntervalMs?: number` - Interval for reconnection attempts (default: 10s)
-  - `burstLimiter?: Bottleneck` - Custom rate limiter instance. If none is provided, one will be created and used internally in the component.
+- `handlers` - Event handlers for WebSocket events
+- `options` - Optional configuration:
+  - `reconnectAndCleanupIntervalMs?: number` - Reconnection check interval (default: 5000ms)
+  - `pendingFlushIntervalMs?: number` - How often to flush pending subscriptions (default: 100ms)
 
 #### Methods
 
-##### `addSubscriptions(assetIds: string[]): Promise<void>`
+| Method | Description |
+|--------|-------------|
+| `addSubscriptions(assetIds: string[])` | Add assets to monitor |
+| `removeSubscriptions(assetIds: string[])` | Stop monitoring assets |
+| `getAssetIds(): string[]` | Get all monitored asset IDs (subscribed + pending) |
+| `getStatistics()` | Get connection and subscription statistics |
+| `clearState()` | Clear all subscriptions and close connection |
 
-Adds new asset subscriptions. The manager will:
-- Filter out already subscribed assets
-- Find available connection groups or create new ones
-- Establish WebSocket connections as needed
+#### Statistics Object
 
-##### `removeSubscriptions(assetIds: string[]): Promise<void>`
-
-Removes asset subscriptions. **Connections are kept alive to avoid missing events**, and unused groups are cleaned up during the next reconnection cycle.
-
-##### `clearState(): Promise<void>`
-
-Clears all subscriptions and state:
-- Removes all asset subscriptions
-- Closes all WebSocket connections
-- Clears the internal order book cache
-
-##### `getStatistics(): { openWebSockets: number; subscribedAssetIds: number }`
-
-Returns statistics about the current state of the subscription manager:
-- `openWebSockets`: The number of websockets that are currently in OPEN state
-- `subscribedAssetIds`: The number of unique asset IDs that are currently subscribed
+```typescript
+manager.getStatistics() // Returns:
+{
+  openWebSockets: number;           // 1 if connected, 0 otherwise
+  assetIds: number;                 // Total monitored assets
+  pendingSubscribeCount: number;    // Assets waiting to be subscribed
+  pendingUnsubscribeCount: number;  // Assets waiting to be unsubscribed
+}
+```
 
 ### WebSocketHandlers
 
-Interface defining event handlers for different WebSocket events.
-
 ```typescript
 interface WebSocketHandlers {
-  // Core Polymarket WebSocket events
+  // Polymarket WebSocket events
   onBook?: (events: BookEvent[]) => Promise<void>;
   onLastTradePrice?: (events: LastTradePriceEvent[]) => Promise<void>;
   onPriceChange?: (events: PriceChangeEvent[]) => Promise<void>;
   onTickSizeChange?: (events: TickSizeChangeEvent[]) => Promise<void>;
   
-  // Derived polymarket price update event
+  // Derived price update (implements Polymarket's display logic)
   onPolymarketPriceUpdate?: (events: PolymarketPriceUpdateEvent[]) => Promise<void>;
   
-  // Connection lifecycle events
-  onWSOpen?: (groupId: string, assetIds: string[]) => Promise<void>;
-  onWSClose?: (groupId: string, code: number, reason: string) => Promise<void>;
+  // Connection events
+  onWSOpen?: (managerId: string, pendingAssetIds: string[]) => Promise<void>;
+  onWSClose?: (managerId: string, code: number, reason: string) => Promise<void>;
   onError?: (error: Error) => Promise<void>;
 }
 ```
 
-#### Key Event Types
+### Event Types
 
-**BookEvent**
-- See // https://docs.polymarket.com/developers/CLOB/websocket/market-channel#book-message
+| Event | Description |
+|-------|-------------|
+| `BookEvent` | Full order book snapshot ([docs](https://docs.polymarket.com/developers/CLOB/websocket/market-channel#book-message)) |
+| `PriceChangeEvent` | Order book price level changes ([docs](https://docs.polymarket.com/developers/CLOB/websocket/market-channel#price-change-message)) |
+| `TickSizeChangeEvent` | Tick size changes ([docs](https://docs.polymarket.com/developers/CLOB/websocket/market-channel#tick-size-change-message)) |
+| `LastTradePriceEvent` | Trade executions |
+| `PolymarketPriceUpdateEvent` | Derived price using Polymarket's display logic |
 
-**PriceChangeEvent**
-- See https://docs.polymarket.com/developers/CLOB/websocket/market-channel#price-change-message
+## Multiple Independent Connections
 
-**onTickSizeChange**
-- See https://docs.polymarket.com/developers/CLOB/websocket/market-channel#tick-size-change-message
-
-**LastTradePriceEvent**
-- Currently undocumented, but is emitted when a trade occurs
-
-**PolymarketPriceUpdateEvent**
-- Derived price update following Polymarket's display logic
-- Uses midpoint when spread <= $0.10, otherwise uses last trade price
-- Includes full order book context
-
-### Custom Rate Limiting
+Each `WSSubscriptionManager` instance maintains its own WebSocket connection:
 
 ```typescript
-import Bottleneck from 'bottleneck';
+// Two separate connections for different asset groups
+const manager1 = new WSSubscriptionManager(handlers1);
+const manager2 = new WSSubscriptionManager(handlers2);
 
-const customLimiter = new Bottleneck({
-  reservoir: 10,
-  reservoirRefreshAmount: 10,
-  reservoirRefreshInterval: 1000,
-  maxConcurrent: 10
-});
-
-const manager = new WSSubscriptionManager(handlers, {
-  burstLimiter: customLimiter
-});
+await manager1.addSubscriptions(['asset-1', 'asset-2']);
+await manager2.addSubscriptions(['asset-3', 'asset-4']);
 ```
 
 ## Examples
 
-Check the [examples](./examples) folder for complete working examples
-
-## Error Handling
-
-The library includes error handling:
-- Automatic reconnection on connection drops
-- User-defined error callbacks for custom handling
-
-## Rate Limits
-
-Respects Polymarket's API rate limits:
-- Default: 5 requests per second burst limit
-- Configurable through custom Bottleneck instances
-
-## License
-
-AGPL-3
+See the [examples](./examples) folder for complete working examples.
 
 ## Testing
 
@@ -180,18 +144,10 @@ AGPL-3
 npm test
 ```
 
-## TypeScript Support
+## License
 
-Full TypeScript definitions included.
+AGPL-3.0
 
 ## Disclaimer
 
-This software is provided "as is", without warranty of any kind, express or implied. The author(s) are not responsible for:
-
-- Any financial losses incurred from using this software
-- Trading decisions made based on the data provided
-- Bugs, errors, or inaccuracies in the data
-- System failures or downtime
-- Any other damages arising from the use of this software
-
-Use at your own risk. Always verify data independently and never rely solely on automated systems for trading decisions.
+This software is provided "as is", without warranty of any kind. The author(s) are not responsible for any financial losses, trading decisions, bugs, or system failures. Use at your own risk.
