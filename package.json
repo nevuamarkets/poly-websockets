@@ -30,8 +30,8 @@
     "trading",
     "prediction-markets"
   ],
-  "author": "Konstantinos Lekkas",
-  "license": "AGPL-3.0",
+  "author": "Nevua Software, LLC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/nevuamarkets/poly-websockets/issues"
   },
